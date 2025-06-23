@@ -53,6 +53,14 @@ const Profile = () => {
         }
     };
 
+    useEffect(() => {
+        if (selectedTab === "orders" && userId) {
+            fetchOrders();
+            const interval = setInterval(fetchOrders, 5000); // Refresh every 5s
+            return () => clearInterval(interval); // Clean up
+        }
+    }, [selectedTab, userId]);
+
     const handleDelete = async (id) => {
         try {
             await axios.delete(`${baseurl}/api/address/${userId}/${id}`);
@@ -284,7 +292,17 @@ const Profile = () => {
                                     <h4>Order ID: {order._id}</h4>
                                     <p><strong>Order Date:</strong> {orderDate}</p>
                                     <p><strong>Payment Mode:</strong> {order.paymentMode}</p>
-                                    <p><strong>Order Status:</strong> {order.status}</p>
+                                    <p>
+                                        <strong>Order Status:</strong>{" "}
+                                        <span style={{
+                                            color: order.status === "delivered" ? "green" :
+                                                order.status === "cancelled" ? "red" :
+                                                    "orange",
+                                            fontWeight: "bold"
+                                        }}>
+                                            {order.status.toUpperCase()}
+                                        </span>
+                                    </p>
                                     <p><strong>Total Product Amount:</strong> ₹{totalProductAmount.toFixed(2)}</p>
                                     <p><strong>Total GST:</strong> ₹{totalGstAmount.toFixed(2)}</p>
                                     <p><strong>Grand Total (incl. GST):</strong> ₹{grandTotal.toFixed(2)}</p>

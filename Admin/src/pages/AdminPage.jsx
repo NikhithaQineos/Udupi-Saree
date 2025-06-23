@@ -90,7 +90,6 @@ export default function AdminPanel() {
         0
     );
 
-
     const productNames = products.map((p) => p.productname);
     // const categoryNames = categories.map((cat) => cat.catname);
     const [filteredCategories, setFilteredCategories] = useState([]);
@@ -334,6 +333,15 @@ export default function AdminPanel() {
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
 
+    const handleMarkAsDelivered = async (orderId) => {
+        try {
+            await axios.put(`${baseurl}/api/orderasdelivered/${orderId}`);
+            // Optional: show a toast or success message
+            fetchOrders(); // 👈 This re-fetches and updates the table
+        } catch (error) {
+            console.error("Failed to mark as delivered:", error);
+        }
+    };
 
     return (
         <Box sx={{ display: "flex", minHeight: "100vh" }}>
@@ -470,17 +478,15 @@ export default function AdminPanel() {
                 }}
             >
                 {activeSection === "category" && (
-                    <Box maxWidth={900} mx="auto">
-                        <Box display="flex" alignItems="center" gap={2} mb={2}>
-                            {/* Search Bar */}
+                    <Box maxWidth={900} mx="auto" px={2} py={3} bgcolor="#fff" borderRadius={2} boxShadow={2}>
+                        {/* Search Bar */}
+                        <Box display="flex" alignItems="center" gap={2} mb={3}>
                             <Autocomplete
                                 freeSolo
                                 options={categoryNames}
                                 inputValue={searchTerm}
                                 onInputChange={(event, newInputValue) => {
                                     setSearchTerm(newInputValue);
-
-                                    // Show all categories again when input is cleared
                                     if (newInputValue.trim() === "") {
                                         setFilteredCategories(categories);
                                     }
@@ -492,7 +498,6 @@ export default function AdminPanel() {
                                         );
                                         setFilteredCategories(matched);
                                     } else {
-                                        // Show all categories if selection is cleared
                                         setFilteredCategories(categories);
                                     }
                                 }}
@@ -508,32 +513,28 @@ export default function AdminPanel() {
                                                     <SearchIcon fontSize="small" />
                                                 </InputAdornment>
                                             ),
-                                            sx: {
-                                                height: 36,
-                                                fontSize: 14,
-                                                backgroundColor: "#f5f5f5",
-                                            },
                                         }}
                                         sx={{
-                                            "& .MuiOutlinedInput-root": {
+                                            width: 240,
+                                            '& .MuiOutlinedInput-root': {
+                                                height: 40,
+                                                fontSize: 14,
                                                 borderRadius: 2,
-                                                height: 36,
-                                                backgroundColor: "#f5f5f5",
-                                            },
-                                            "& .MuiInputBase-input": {
-                                                padding: "8px 8px",
+                                                backgroundColor: '#fdf4ec',
+                                                borderColor: '#a0522d',
                                             },
                                         }}
                                     />
                                 )}
-                                sx={{ width: 200 }}
                             />
-
                         </Box>
 
-                        <Typography variant="h4" gutterBottom fontWeight="bold">
+                        {/* Form Header */}
+                        <Typography variant="h4" fontWeight="bold" color="#5e3d26" gutterBottom>
                             Add Category
                         </Typography>
+
+                        {/* Form */}
                         <form onSubmit={handleCategorySubmit}>
                             <TextField
                                 fullWidth
@@ -542,23 +543,46 @@ export default function AdminPanel() {
                                 onChange={(e) => setCatName(e.target.value)}
                                 margin="normal"
                                 required
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2
+                                    },
+                                }}
                             />
+
                             <TextField
                                 fullWidth
                                 label="Description"
                                 value={catdescription}
                                 onChange={(e) => setCatDescription(e.target.value)}
                                 margin="normal"
+                                multiline
                                 rows={3}
                                 required
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2,
+                                    },
+                                }}
                             />
 
-                            <Stack spacing={2} mt={2}>
+                            {/* Buttons */}
+                            <Stack direction="row" spacing={2} mt={2} flexWrap="wrap">
+                                {/* Upload Button */}
                                 <Button
                                     variant="outlined"
                                     component="label"
+                                    sx={{
+                                        color: '#a0522d',
+                                        borderColor: '#a0522d',
+                                        borderRadius: 2,
+                                        '&:hover': {
+                                            backgroundColor: '#a0522d',
+                                            color: '#fff',
+                                        },
+                                    }}
                                 >
-                                    {catimage ? catimage.name : "Upload Image"}
+                                    {catimage ? catimage.name : 'Upload Image'}
                                     <input
                                         type="file"
                                         hidden
@@ -567,63 +591,68 @@ export default function AdminPanel() {
                                     />
                                 </Button>
 
-                                <Stack direction="row" spacing={2}>
-                                    {isEditing ? (
-                                        <Button type="submit" variant="outlined">
-                                            Update Category
-                                        </Button>
-                                    ) : (
-                                        <Button type="submit" variant="outlined">
-                                            Add Category
-                                        </Button>
-                                    )}
+                                {/* Submit Button */}
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    sx={{
+                                        backgroundColor: '#a0522d',
+                                        color: '#fff',
+                                        borderRadius: 2,
+                                        '&:hover': {
+                                            backgroundColor: '#8b4513',
+                                        },
+                                    }}
+                                >
+                                    {isEditing ? 'Update Category' : 'Add Category'}
+                                </Button>
 
-                                    {isEditing && (
-                                        <Button
-                                            variant="text"
-                                            color="secondary"
-                                            onClick={() => {
-                                                setIsEditing(false);
-                                                setEditCatId(null);
-                                                setCatName("");
-                                                setCatDescription("");
-                                                setCatImage(null);
-                                            }}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    )}
-                                </Stack>
+                                {/* Cancel Button */}
+                                {isEditing && (
+                                    <Button
+                                        variant="text"
+                                        color="secondary"
+                                        onClick={() => {
+                                            setIsEditing(false);
+                                            setEditCatId(null);
+                                            setCatName('');
+                                            setCatDescription('');
+                                            setCatImage(null);
+                                        }}
+                                        sx={{ textTransform: 'none' }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                )}
                             </Stack>
-
-
                         </form>
 
-                        <Typography variant="h5" mt={6} mb={2} fontWeight="bold">
+                        {/* All Categories Header */}
+                        <Typography variant="h5" mt={6} mb={2} fontWeight="bold" color="#5e3d26">
                             All Categories
                         </Typography>
+
+                        {/* Cards */}
                         <Grid container spacing={3}>
                             {filteredCategories.map((cat) => (
                                 <Grid
                                     item
                                     key={cat._id}
-                                    xs={12}
-                                    sm={6}
+                                    xs={6}
+                                    sm={4}
                                     md={3}
-                                    sx={{
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                    }}
+                                    sx={{ display: 'flex', justifyContent: 'center' }}
                                 >
                                     <Card
                                         sx={{
-                                            width: '100%',           // ensures card fills grid width
-                                            maxWidth: 280,           // sets consistent width
-                                            height: 360,             // fixed height for all cards
+                                            width: '100%',
+                                            maxWidth: 272,
+                                            height: 310,
                                             display: 'flex',
                                             flexDirection: 'column',
                                             justifyContent: 'space-between',
                                             boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                                            borderRadius: 2,
                                             transition: 'transform 0.2s ease-in-out',
                                             '&:hover': {
                                                 transform: 'scale(1.03)',
@@ -664,8 +693,15 @@ export default function AdminPanel() {
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pb: 2 }}>
                                             <Button
                                                 variant="outlined"
-                                                color="primary"
                                                 size="small"
+                                                sx={{
+                                                    color: '#a0522d',
+                                                    borderColor: '#a0522d',
+                                                    '&:hover': {
+                                                        backgroundColor: '#a0522d',
+                                                        color: '#fff',
+                                                    },
+                                                }}
                                                 onClick={() => startEditingCategory(cat)}
                                             >
                                                 Edit
@@ -683,15 +719,14 @@ export default function AdminPanel() {
                                 </Grid>
                             ))}
                         </Grid>
-
                     </Box>
                 )}
 
                 {activeSection === "product" && (
-                    <Box maxWidth={900} mx="auto">
+                    <Box maxWidth={900} mx="auto" px={2} py={3} bgcolor="#fff" borderRadius={2} boxShadow={2}>
 
-                        <Box display="flex" alignItems="center" gap={2} mb={2}>
-                            {/* Search Bar */}
+                        {/* Search Bar */}
+                        <Box display="flex" alignItems="center" gap={2} mb={3}>
                             <Autocomplete
                                 freeSolo
                                 options={productNames}
@@ -704,95 +739,61 @@ export default function AdminPanel() {
                                         {...params}
                                         placeholder="Search..."
                                         variant="outlined"
-                                        InputProps={{
-                                            ...params.InputProps,
-                                            startAdornment: (
-                                                <InputAdornment position="start">
-                                                    <SearchIcon fontSize="small" />
-                                                </InputAdornment>
-                                            ),
-                                            sx: {
-                                                height: 36,
-                                                fontSize: 14,
-                                                backgroundColor: "#h5f5f6", // Light background
-                                            },
-                                        }}
                                         sx={{
-                                            "& .MuiOutlinedInput-root": {
+                                            width: 240,
+                                            '& .MuiOutlinedInput-root': {
+                                                height: 40,
+                                                fontSize: 14,
                                                 borderRadius: 2,
-                                                height: 36,
-                                                backgroundColor: "#f9f8f7", // Apply here for better compatibility
-                                            },
-                                            "& .MuiInputBase-input": {
-                                                padding: "8px 8px",
+                                                backgroundColor: '#fdf4ec',
                                             },
                                         }}
                                     />
                                 )}
-                                sx={{ width: 200 }}
                             />
                         </Box>
 
-                        <Typography variant="h4" gutterBottom fontWeight="bold">
+                        {/* Form Title */}
+                        <Typography variant="h4" fontWeight="bold" color="#5e3d26" gutterBottom>
                             Add Product
                         </Typography>
-                        <form onSubmit={handleProductSubmit}>
-                            <TextField
-                                fullWidth
-                                label="Product Name"
-                                value={productname}
-                                onChange={(e) => setProductName(e.target.value)}
-                                margin="normal"
-                                required
-                            />
-                            <TextField
-                                fullWidth
-                                type="number"
-                                label="Price"
-                                value={productprice}
-                                onChange={(e) => setProductPrice(e.target.value)}
-                                margin="normal"
-                                required
-                                inputProps={{ min: 0 }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Description"
-                                value={productdescription}
-                                onChange={(e) => setProductDescription(e.target.value)}
-                                margin="normal"
-                                rows={3}
-                                required
-                            />
-                            <TextField
-                                fullWidth
-                                type="number"
-                                label="Quantity"
-                                value={productquantity}
-                                onChange={(e) => setProductQuantity(e.target.value)}
-                                margin="normal"
-                                required
-                                inputProps={{ min: 0 }}
-                            />
-                            <TextField
-                                fullWidth
-                                type="number"
-                                label="GST (%)"
-                                value={productgst}
-                                onChange={(e) => setProductGst(e.target.value)}
-                                margin="normal"
-                                required
-                                inputProps={{ min: 0, max: 100 }}
-                            />
-                            <TextField
-                                fullWidth
-                                label="Product Color"
-                                value={productcolor}
-                                onChange={(e) => setProductColor(e.target.value)}
-                                margin="normal"
-                                required
-                            />
 
+                        {/* Form */}
+                        <form onSubmit={handleProductSubmit}>
+                            {[{
+                                label: "Product Name", value: productname, onChange: setProductName
+                            }, {
+                                label: "Price", type: "number", value: productprice, onChange: setProductPrice, inputProps: { min: 0 }
+                            }, {
+                                label: "Description", value: productdescription, onChange: setProductDescription, multiline: true, rows: 3
+                            }, {
+                                label: "Quantity", type: "number", value: productquantity, onChange: setProductQuantity, inputProps: { min: 0 }
+                            }, {
+                                label: "GST (%)", type: "number", value: productgst, onChange: setProductGst, inputProps: { min: 0, max: 100 }
+                            }, {
+                                label: "Product Color", value: productcolor, onChange: setProductColor
+                            }].map((field, i) => (
+                                <TextField
+                                    key={i}
+                                    fullWidth
+                                    label={field.label}
+                                    type={field.type || 'text'}
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    margin="normal"
+                                    multiline={field.multiline}
+                                    rows={field.rows}
+                                    inputProps={field.inputProps}
+                                    required
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 2,
+                                        },
+                                    }}
+                                />
+                            ))}
+
+                            {/* Fabric */}
                             <TextField
                                 select
                                 fullWidth
@@ -801,6 +802,11 @@ export default function AdminPanel() {
                                 onChange={(e) => setProductFabric(e.target.value)}
                                 margin="normal"
                                 required
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2,
+                                    },
+                                }}
                             >
                                 {fabricOptions.map((option) => (
                                     <MenuItem key={option} value={option}>
@@ -808,6 +814,8 @@ export default function AdminPanel() {
                                     </MenuItem>
                                 ))}
                             </TextField>
+
+                            {/* Offer */}
                             <TextField
                                 fullWidth
                                 type="number"
@@ -816,6 +824,7 @@ export default function AdminPanel() {
                                 onChange={(e) => setOfferPercentage(e.target.value)}
                                 margin="normal"
                                 inputProps={{ min: 0, max: 100 }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2} }}
                             />
 
                             <TextField
@@ -826,17 +835,18 @@ export default function AdminPanel() {
                                 onChange={(e) => setValidTill(e.target.value)}
                                 margin="normal"
                                 InputLabelProps={{ shrink: true }}
-                                inputProps={{
-                                    min: new Date().toISOString().split("T")[0],  // 👈 disables all past dates
-                                }}
+                                inputProps={{ min: new Date().toISOString().split("T")[0] }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2} }}
                             />
 
+                            {/* Category Select */}
                             <FormControl fullWidth margin="normal" required>
                                 <InputLabel>Category</InputLabel>
                                 <Select
                                     value={catId}
                                     onChange={(e) => setCatId(e.target.value)}
                                     label="Category"
+                                    sx={{borderRadius: 2 }}
                                 >
                                     {categories.map((cat) => (
                                         <MenuItem value={cat._id} key={cat._id}>
@@ -846,69 +856,85 @@ export default function AdminPanel() {
                                 </Select>
                             </FormControl>
 
-                            <Button variant="outlined" component="label" sx={{ mt: 2 }}>
-                                {productimage ? productimage.name : "Upload Product Image"}
-                                <input
-                                    type="file"
-                                    hidden
-                                    accept="image/*"
-                                    multiple
-                                    onChange={(e) => setProductImage(e.target.files)}
-                                />
-                            </Button>
+                            {/* Upload Image */}
+                            <Stack direction="row" spacing={2} mt={3} flexWrap="wrap">
+                                {/* Upload Image Button */}
+                                <Button
+                                    variant="outlined"
+                                    component="label"
+                                    sx={{
+                                        color: '#a0522d',
+                                        borderColor: '#a0522d',
+                                        borderRadius: 2,
+                                        '&:hover': {
+                                            backgroundColor: '#a0522d',
+                                            color: '#fff',
+                                        },
+                                    }}
+                                >
+                                    {productimage ? productimage[0]?.name || "Images Selected" : "Upload Product Image"}
+                                    <input
+                                        type="file"
+                                        hidden
+                                        accept="image/*"
+                                        multiple
+                                        onChange={(e) => setProductImage(e.target.files)}
+                                    />
+                                </Button>
 
-                            <Stack mt={3} spacing={2}>
-                                <Stack direction="row" spacing={2}>
-                                    {isEditingProduct ? (
-                                        <Button type="submit" variant="outlined">
-                                            Update Product
-                                        </Button>
-                                    ) : (
-                                        <Button type="submit" variant="outlined">
-                                            Add Product
-                                        </Button>
-                                    )}
+                                {/* Submit Button */}
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    sx={{
+                                        backgroundColor: '#a0522d',
+                                        color: '#fff',
+                                        borderRadius: 2,
+                                        '&:hover': {
+                                            backgroundColor: '#8b4513',
+                                        },
+                                    }}
+                                >
+                                    {isEditingProduct ? "Update Product" : "Add Product"}
+                                </Button>
 
-                                    {isEditingProduct && (
-                                        <Button
-                                            variant="text"
-                                            color="secondary"
-                                            onClick={() => {
-                                                setIsEditingProduct(false);
-                                                setEditProductId(null);
-                                                setProductName("");
-                                                setProductPrice("");
-                                                setProductDescription("");
-                                                setProductQuantity("");
-                                                setProductGst("");
-                                                setProductColor("");
-                                                setProductFabric("");
-                                                setOfferPercentage("");
-                                                setValidTill("");
-                                                setCatId("");
-                                                setProductImage(null);
-                                            }}
-                                        >
-                                            Cancel
-                                        </Button>
-                                    )}
-                                </Stack>
+                                {/* Cancel Button */}
+                                {isEditingProduct && (
+                                    <Button
+                                        variant="text"
+                                        color="secondary"
+                                        onClick={() => {
+                                            setIsEditingProduct(false);
+                                            setEditProductId(null);
+                                            setProductName("");
+                                            setProductPrice("");
+                                            setProductDescription("");
+                                            setProductQuantity("");
+                                            setProductGst("");
+                                            setProductColor("");
+                                            setProductFabric("");
+                                            setOfferPercentage("");
+                                            setValidTill("");
+                                            setCatId("");
+                                            setProductImage(null);
+                                        }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                )}
                             </Stack>
-
 
                         </form>
 
+                        {/* Success Message */}
                         {successMessage && (
-                            <Typography
-                                variant="body1"
-                                color="success.main"
-                                sx={{ mt: 2, fontWeight: "bold" }}
-                            >
+                            <Typography variant="body1" color="success.main" sx={{ mt: 2, fontWeight: "bold" }}>
                                 {successMessage}
                             </Typography>
                         )}
 
-                        <Typography variant="h5" mt={6} mb={2} fontWeight="bold">
+                        {/* Product List */}
+                        <Typography variant="h5" mt={6} mb={2} fontWeight="bold" color="#5e3d26">
                             All Products
                         </Typography>
 
@@ -921,20 +947,21 @@ export default function AdminPanel() {
                                     <Grid
                                         item
                                         key={prod._id}
-                                        xs={12}
-                                        sm={6}
+                                        xs={6}
+                                        sm={4}
                                         md={3}
                                         sx={{ display: 'flex', justifyContent: 'center' }}
                                     >
                                         <Card
                                             sx={{
                                                 width: '100%',
-                                                maxWidth: 280,
-                                                height: 550, // fixed card height
+                                                maxWidth: 272,
+                                                height: 560,
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 justifyContent: 'space-between',
                                                 boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                                                borderRadius: 2,
                                                 transition: 'transform 0.2s ease-in-out',
                                                 '&:hover': {
                                                     transform: 'scale(1.03)',
@@ -952,7 +979,7 @@ export default function AdminPanel() {
                                                 alt={prod.productname}
                                             />
 
-                                            <CardContent sx={{ flexGrow: 1, overflow: 'hidden', textAlign: 'left' }}>
+                                            <CardContent sx={{ flexGrow: 1, textAlign: 'left' }}>
                                                 <Typography variant="h6" fontWeight="bold" gutterBottom noWrap>
                                                     {prod.productname}
                                                 </Typography>
@@ -972,43 +999,36 @@ export default function AdminPanel() {
                                                     {prod.productdescription}
                                                 </Typography>
 
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Price: ₹{prod.productprice}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Qty: {prod.productquantity}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    GST: {prod.productgst}%
-                                                </Typography>
-
+                                                <Typography variant="body2">Price: ₹{prod.productprice}</Typography>
+                                                <Typography variant="body2">Qty: {prod.productquantity}</Typography>
+                                                <Typography variant="body2">GST: {prod.productgst}%</Typography>
                                                 {prod.offer?.offerpercentage > 0 && (
-                                                    <Typography variant="body2" color="text.secondary">
+                                                    <Typography variant="body2">
                                                         Offer: {prod.offer.offerpercentage}% off
                                                     </Typography>
                                                 )}
                                                 {prod.offer?.validTill && new Date(prod.offer.validTill) >= new Date() && (
-                                                    <Typography variant="body2" color="text.secondary">
+                                                    <Typography variant="body2">
                                                         Valid Till: {new Date(prod.offer.validTill).toLocaleDateString()}
                                                     </Typography>
                                                 )}
-
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Category: {prod.cat_id?.catname || "No category"}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Color: {prod.productcolor}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Fabric: {prod.productfabric}
-                                                </Typography>
+                                                <Typography variant="body2">Category: {prod.cat_id?.catname || "No category"}</Typography>
+                                                <Typography variant="body2">Color: {prod.productcolor}</Typography>
+                                                <Typography variant="body2">Fabric: {prod.productfabric}</Typography>
                                             </CardContent>
 
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pb: 2 }}>
                                                 <Button
                                                     variant="outlined"
-                                                    color="primary"
                                                     size="small"
+                                                    sx={{
+                                                        color: '#a0522d',
+                                                        borderColor: '#a0522d',
+                                                        '&:hover': {
+                                                            backgroundColor: '#a0522d',
+                                                            color: '#fff',
+                                                        },
+                                                    }}
                                                     onClick={() => startEditingProduct(prod)}
                                                 >
                                                     Edit
@@ -1026,7 +1046,6 @@ export default function AdminPanel() {
                                     </Grid>
                                 ))}
                         </Grid>
-
                     </Box>
                 )}
 
@@ -1101,7 +1120,6 @@ export default function AdminPanel() {
                         </Table>
                     </TableContainer>
                 )}
-
 
                 {activeSection === "orders" && (
                     <Box sx={{ p: 3 }}>
@@ -1189,6 +1207,7 @@ export default function AdminPanel() {
                                     <TableCell><strong>Phone</strong></TableCell>
                                     <TableCell><strong>Payment</strong></TableCell>
                                     <TableCell><strong>Payment ID</strong></TableCell>
+                                    <TableCell><strong>Order ID</strong></TableCell>
                                     <TableCell><strong>Total</strong></TableCell>
                                     <TableCell><strong>Status</strong></TableCell>
                                     <TableCell><strong>Items</strong></TableCell>
@@ -1208,14 +1227,29 @@ export default function AdminPanel() {
                                         <TableCell>{order.userphone}</TableCell>
                                         <TableCell>{order.paymentMode}</TableCell>
                                         <TableCell>{order.paymentId || "N/A"}</TableCell>
+                                        <TableCell>{order._id}</TableCell>
                                         <TableCell>₹{order.total}</TableCell>
-                                        <TableCell
-                                            sx={{
-                                                color: order.status === "cancelled" ? "red" : "green",
-                                                fontWeight: "bold",
-                                            }}
-                                        >
-                                            {order.status.toUpperCase()}
+                                        <TableCell>
+                                            <Typography
+                                                sx={{
+                                                    color: order.status === "cancelled" ? "red" : (order.status === "delivered" ? "green" : "orange"),
+                                                    fontWeight: "bold",
+                                                }}
+                                            >
+                                                {order.status.toUpperCase()}
+                                            </Typography>
+
+                                            {order.status !== "delivered" && order.status !== "cancelled" && (
+                                                <Button
+                                                    variant="contained"
+                                                    color="success"
+                                                    size="small"
+                                                    sx={{ mt: 1 }}
+                                                    onClick={() => handleMarkAsDelivered(order._id)}
+                                                >
+                                                    Mark as Delivered
+                                                </Button>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             {order.items.map((item, i) => (
