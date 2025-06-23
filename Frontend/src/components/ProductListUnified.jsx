@@ -24,7 +24,7 @@ const ProductListUnified = () => {
   const { cartItems, setCartItems } = useContext(CartContext);
   const { wishlistItems, fetchWishlist } = useContext(WishlistContext);
 
-  useEffect(() => { 
+  useEffect(() => {
     const fetchProducts = async () => {
       try {
         const url = catId
@@ -63,6 +63,7 @@ const ProductListUnified = () => {
       quantity: 1,
       productgst: product.productgst,
       offer: product.offer || null,
+      maxQty: product.productquantity,
     };
 
     if (existingItem) {
@@ -180,6 +181,10 @@ const ProductListUnified = () => {
               const discountedPrice = originalPrice - (originalPrice * discount) / 100;
               // const isWishlisted = wishlist.includes(product._id);
               const isWishlisted = product && wishlistItems.some(item => item._id === product._id);
+              const isLowStock = product.productquantity < 20;
+              const existingItem = cartItems.find(item => item.id === product._id);
+              const isMaxQuantityReached = existingItem && existingItem.quantity >= product.productquantity;
+              const isOutOfStock = product.productquantity === 0;
 
 
               return (
@@ -189,6 +194,10 @@ const ProductListUnified = () => {
                   onClick={() => navigate(`/product/${product._id}`)}
                 >
                   <div className="product-card">
+                    {isLowStock && (
+                      <span className="low-stock-tag">Low Stock</span>
+                    )}
+
                     <img
                       src={
                         product.productimages.length > 0
@@ -222,9 +231,19 @@ const ProductListUnified = () => {
                           e.stopPropagation();
                           handleAddToCart(product);
                         }}
+                        disabled={isOutOfStock || isMaxQuantityReached}
+                        style={{
+                          opacity: isOutOfStock || isMaxQuantityReached ? 0.5 : 1,
+                          cursor: isOutOfStock || isMaxQuantityReached ? "not-allowed" : "pointer",
+                        }}
                       >
-                        🛒 Add
+                        🛒 {isOutOfStock
+                          ? "Out of Stock"
+                          : isMaxQuantityReached
+                            ? "Out of Stock"
+                            : "Add"}
                       </button>
+
                       <button
                         className="wishlist-icon-button"
                         onClick={(e) => {

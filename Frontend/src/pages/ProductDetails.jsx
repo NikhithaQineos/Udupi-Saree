@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import "./ProductDetails.css";
-import { useContext } from "react";
 import { CartContext } from "../../context/cartContext";
 import { WishlistContext } from "../../context/wishlistContext";
 
@@ -12,18 +11,15 @@ const ProductDetails = () => {
   const [product, setProduct] = useState(null);
   const [mainImage, setMainImage] = useState("");
   const [wishlist, setWishlist] = useState([]);
-
-
   const [loading, setLoading] = useState(true);
+
   const baseurl = import.meta.env.VITE_API_BASE_URL;
   const user = JSON.parse(localStorage.getItem("user"));
 
   const { cartItems, setCartItems } = useContext(CartContext);
   const { wishlistItems, fetchWishlist } = useContext(WishlistContext);
 
-  // const isWishlisted = wishlistItems.some(item => item._id === product._id);
   const isWishlisted = product && wishlistItems.some(item => item._id === product._id);
-
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -48,7 +44,7 @@ const ProductDetails = () => {
       if (!user?._id) return;
       try {
         const res = await axios.get(`${baseurl}/api/getwishlist/${user._id}`);
-        const wishlistIds = res.data.wishlist.map((item) => item._id);
+        const wishlistIds = res.data.wishlist.map(item => item._id);
         setWishlist(wishlistIds);
       } catch (err) {
         console.error("Error fetching wishlist:", err);
@@ -59,15 +55,22 @@ const ProductDetails = () => {
     fetchWishlist();
   }, [id, user?._id]);
 
+  if (loading) return <p>Loading product details...</p>;
+  if (!product) return <p>Product not found.</p>;
+
+  // Logic moved here from inside handleAddToCart
+  const isLowStock = product.productquantity < 20;
+  const isOutOfStock = product.productquantity === 0;
+  const existingItem = cartItems.find(item => item.id === product._id);
+  const isMaxQuantityReached = existingItem && existingItem.quantity >= product.productquantity;
+
+  const discount = product.offer?.offerpercentage || 0;
+  const originalPrice = Number(product.productprice);
+  const discountedPrice = discount
+    ? Number(originalPrice - (originalPrice * discount) / 100)
+    : originalPrice;
+
   const handleAddToCart = () => {
-    const existingItem = cartItems.find(item => item.id === product._id);
-
-    const discount = product.offer?.offerpercentage || 0;
-    const originalPrice = Number(product.productprice);
-    const discountedPrice = discount
-      ? Number(originalPrice - (originalPrice * discount) / 100)
-      : originalPrice;
-
     const newItem = {
       id: product._id,
       name: product.productname,
@@ -79,6 +82,7 @@ const ProductDetails = () => {
       quantity: 1,
       productgst: product.productgst,
       offer: product.offer || null,
+      maxQty: product.productquantity,
     };
 
     if (existingItem) {
@@ -105,24 +109,11 @@ const ProductDetails = () => {
         productId: product._id,
       });
 
-      // Re-fetch to update global state
       fetchWishlist();
     } catch (err) {
       console.error("Error updating wishlist:", err);
     }
   };
-
-
-  if (loading) return <p>Loading product details...</p>;
-  if (!product) return <p>Product not found.</p>;
-
-  const discount = product.offer?.offerpercentage || 0;
-  const originalPrice = Number(product.productprice);
-  const discountedPrice = discount
-    ? Number(originalPrice - (originalPrice * discount) / 100)
-    : originalPrice;
-
-  // const isWishlisted = wishlist.includes(product._id);
 
   return (
     <div className="product-detail-wrapper">
@@ -133,12 +124,15 @@ const ProductDetails = () => {
               key={index}
               src={`${baseurl}/uploads/${img}`}
               alt={`Thumbnail ${index + 1}`}
-              className={`thumbnail ${mainImage === `${baseurl}/uploads/${img}` ? "active-thumbnail" : ""}`}
+              className={`thumbnail ${
+                mainImage === `${baseurl}/uploads/${img}` ? "active-thumbnail" : ""
+              }`}
               onClick={() => setMainImage(`${baseurl}/uploads/${img}`)}
             />
           ))}
         </div>
         <div className="main-image-container">
+          {isLowStock && <span className="low-stock-badge">Low Stock</span>}
           <img src={mainImage} alt="Main Product" className="main-image" />
         </div>
       </div>
@@ -161,6 +155,7 @@ const ProductDetails = () => {
             <span className="discounted-price">₹{originalPrice.toFixed(2)}</span>
           )}
         </p>
+
         <p className="product-color">
           <strong>Color:</strong> {product.productcolor || "N/A"}
         </p>
@@ -172,10 +167,20 @@ const ProductDetails = () => {
         <p className="gst">
           <strong>GST:</strong> {product.productgst}%
         </p>
+
         <div className="buttons">
-          <button className="add-to-cart-btn" onClick={handleAddToCart}>
-            🛒 Add to Cart
+          <button
+            className="add-to-cart-btn"
+            onClick={handleAddToCart}
+            disabled={isOutOfStock || isMaxQuantityReached}
+            style={{
+              opacity: isOutOfStock || isMaxQuantityReached ? 0.5 : 1,
+              cursor: isOutOfStock || isMaxQuantityReached ? "not-allowed" : "pointer",
+            }}
+          >
+            🛒 {isOutOfStock ? "Out of Stock" : isMaxQuantityReached ? "Out of Stock" : "Add to Cart"}
           </button>
+
           <button className="wishlist-icon-button" onClick={toggleWishlist}>
             {isWishlisted ? (
               <FaHeart color="red" size={20} />

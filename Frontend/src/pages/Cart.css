@@ -241,3 +241,9 @@
   color: #6d4c41;
   margin-top: 4px;
 }
+
+button:disabled,
+.disabled-plus {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

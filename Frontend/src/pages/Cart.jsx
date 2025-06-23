@@ -73,7 +73,7 @@ const Cart = () => {
         {cartItems.length === 0 ? (
           <p className="empty-cart-message">🛒 Your cart is empty.</p>
         ) : (
-          cartItems.map(({ id, image, name, price, originalPrice, quantity, gst, productgst }) => {
+          cartItems.map(({ id, image, name, price, originalPrice, quantity, gst, productgst,maxQty  }) => {
             const gstRate = gst || productgst || 0;
             const gstAmount = (price * quantity * gstRate) / 100;
 
@@ -90,7 +90,7 @@ const Cart = () => {
                     </span>
                   </p>
 
-                  {/* ✅ ADDED: GST info per item */}
+                  {/* ADDED: GST info per item */}
                   <p className="gst-text">
                     GST ({gstRate}%): ₹{gstAmount.toFixed(2)}
                   </p>
@@ -98,7 +98,14 @@ const Cart = () => {
                   <div className="quantity-controls">
                     <button onClick={() => updateQuantity(id, -1)}>-</button>
                     <span>{quantity}</span>
-                    <button onClick={() => updateQuantity(id, 1)}>+</button>
+                    <button
+                      onClick={() => updateQuantity(id, 1)}
+                      disabled={quantity >= (maxQty)} // fallback to 20 if maxQty missing
+                      className={quantity >= (maxQty) ? "disabled-plus" : ""}
+                    >
+                      +
+                    </button>
+
                   </div>
                   <button className="remove" onClick={() => removeFromCart(id)}>
                     Remove
