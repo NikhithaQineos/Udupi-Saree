@@ -1,0 +1,75 @@
+:root {
+  --primary-brown: #b78c6a;
+  --text-dark: #3e2f26;
+  --text-muted: #555;
+  --bg-blur: rgba(255, 245, 235, 0.75);
+  --box-shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.about-us-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px 10px;
+  background: url('/images/saree-bg.jpg') center/cover no-repeat;
+  background-color: var(--bg-blur);
+  backdrop-filter: blur(6px);
+  border-radius: 10px;
+  margin: 20px auto;
+  max-width: 1200px;
+  box-shadow: var(--box-shadow-soft);
+}
+
+/* Image styles */
+.image-container img {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Text content */
+.text-container {
+  max-width: 600px;
+  padding: 20px;
+  text-align: left;
+}
+
+.text-container h2 {
+  font-size: 36px;
+  color: var(--primary-brown);
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+.text-container p {
+  font-size: 18px;
+  color: var(--text-dark);
+  line-height: 1.7;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: var(--box-shadow-soft);
+}
+
+/* Responsive layout: stack image and text vertically */
+@media (max-width: 768px) {
+  .about-us-container {
+    flex-direction: column;
+    padding: 40px 20px;
+  }
+
+  .text-container {
+    text-align: center;
+  }
+
+  .text-container h2 {
+    font-size: 28px;
+  }
+
+  .text-container p {
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,129 @@
+:root {
+  --primary-brown: #b78c6a;
+  --text-dark: #3e2f26;
+  --text-muted: #555;
+  --bg-blur: rgba(255, 245, 235, 0.75);
+  --box-shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.contact-container {
+  padding: 60px 20px;
+  background: url('/images/saree-bg.jpg') center/cover no-repeat;
+  backdrop-filter: blur(6px);
+  background-color: var(--bg-blur);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.form-wrapper {
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 40px;
+  border-radius: 16px;
+  max-width: 1000px;
+  width: 100%;
+  box-shadow: var(--box-shadow-soft);
+}
+
+h2 {
+  font-size: 36px;
+  color: var(--primary-brown);
+  margin-bottom: 30px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.contact-form {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.left-column,
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 45%;
+}
+
+.contact-form input,
+.contact-form textarea {
+  padding: 15px;
+  font-size: 16px;
+  border: 1px solid #d3c1b0;
+  border-radius: 10px;
+  box-shadow: var(--box-shadow-soft);
+  background-color: #fdfaf8;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+  border-color: var(--primary-brown);
+  box-shadow: 0 0 0 2px rgba(183, 140, 106, 0.2);
+  outline: none;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+
+.submit-button {
+  padding: 14px;
+  font-size: 18px;
+  background-color: var(--primary-brown);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease-in-out;
+  margin-top: 10px;
+}
+
+.submit-button:hover {
+  background-color: #a67350;
+  transform: scale(1.03);
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+  .left-column,
+  .right-column {
+    width: 100%;
+  }
+
+  .submit-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  h2 {
+    font-size: 28px;
+  }
+
+  .form-wrapper {
+    padding: 30px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  h2 {
+    font-size: 24px;
+  }
+
+  .contact-form input,         
+  .contact-form textarea {
+    font-size: 15px;
+    padding: 12px;
+  }
+
+  .submit-button {
+    font-size: 16px;
+    padding: 12px;
+  }
+}

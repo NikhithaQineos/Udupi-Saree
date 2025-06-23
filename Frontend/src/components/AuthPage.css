@@ -1,0 +1,185 @@
+/* BODY setup */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', sans-serif;
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Blurred background image */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: url('https://img.freepik.com/premium-photo/designer-sarees-indian-concept-background-greeting-card_1327556-10501.jpg?semt=ais_hybrid&w=740') no-repeat center center fixed;
+  background-size: cover;
+  opacity: 1;
+  z-index: -2;
+  filter: blur(6px);
+}
+
+/* Optional dark overlay for contrast */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: -1;
+}
+
+/* Auth Container with frosted-glass effect */
+.auth-container {
+  max-width: 420px;
+  margin: 80px auto;
+  padding: 35px 30px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.5s ease;
+  z-index: 1;
+}
+
+/* Fade animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Headline */
+.auth-container h2 {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  color: #660000;
+  margin-bottom: 10px;
+}
+
+/* Input Fields */
+.auth-container input {
+  padding: 12px 14px;
+  font-size: 15px;
+  border: 1px solid #b2967d;
+  border-radius: 8px;
+  background-color: #fff8f0;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-container input:focus {
+  border-color: #a05a2c;
+  outline: none;
+  box-shadow: 0 0 6px rgba(160, 90, 44, 0.4);
+}
+
+/* Button Styles */
+.auth-container button {
+  padding: 12px;
+  background: linear-gradient(90deg, #8b0000, #a0522d);
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.auth-container button:hover:not(:disabled) {
+  background: linear-gradient(90deg, #6b0000, #7c3c1c);
+}
+
+.auth-container button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Password Visibility */
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.password-input span {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a05a2c;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.password-input span:hover {
+  color: #8b0000;
+}
+
+/* Links */
+.auth-container p {
+  text-align: center;
+  color: #8b0000;
+  font-size: 14px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.auth-container p:hover {
+  color: #7c3c1c;
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .auth-container {
+    margin: 40px 20px;
+    padding: 25px 20px;
+  }
+
+  .auth-container h2 {
+    font-size: 24px;
+  }
+}
+
+.input-error-wrap {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.input-error-wrap input {
+  flex: 1;
+}
+
+.error-msg-inline {
+  color: #196124;
+  /* deep red */
+  font-size: 0.75rem;
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.password-input {
+  position: relative;
+}
+
+.password-input .toggle-icon {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  cursor: pointer;
+}

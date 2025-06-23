@@ -1,0 +1,134 @@
+.wishlist-container {
+  padding: 40px 20px;
+  background-color: #f8f4ef;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.wishlist-title {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #5e412f;
+  font-size: 24px;
+}
+
+.wishlist-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  justify-items: center;
+}
+
+.wishlist-card {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 280px;
+}
+
+.wishlist-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: #fdf8f4;
+  border: 1px solid #e0d3c3;
+}
+
+.wishlist-details {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.wishlist-details h5 {
+  font-size: 16px;
+  color: #5e412f;
+  margin: 8px 0;
+}
+
+.wishlist-details p {
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 10px;
+}
+
+.price-line {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 14px;
+}
+
+.discounted-price {
+  font-weight: bold;
+  color: #2e2e2e;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.discount {
+  color: green;
+  font-size: 13px;
+}
+
+.wishlist-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.wishlist-actions button {
+  padding: 8px 16px;
+  border: none;
+  background-color: #b78c6a;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+  font-size: 14px;
+}
+
+.wishlist-actions button:hover {
+  background-color: #a67352;
+}
+
+.wishlist-empty {
+  text-align: center;
+  margin: 100px auto;
+  font-size: 22px;
+  color: #efc762;
+}
+
+.wishlist-home-link {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: none;
+  color: #b00020;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+@media (max-width: 480px) {
+  .wishlist-card {
+    padding: 16px;
+  }
+
+  .wishlist-details h5 {
+    font-size: 15px;
+  }
+
+  .price-line {
+    font-size: 13px;
+  }
+}

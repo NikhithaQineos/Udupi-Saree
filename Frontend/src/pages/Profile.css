@@ -1,0 +1,347 @@
+:root {
+  --primary-color: #b78963;
+  /* matches your header tan */
+  --text-color: #333;
+  --background-light: #fff;
+  --border-color: #ddd;
+  --hover-bg: #f5f5f5;
+}
+
+.profile-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--background-light);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-color);
+}
+
+.sidebar {
+  width: 250px;
+  border-right: 2px solid var(--border-color);
+  padding: 1.5rem 1rem;
+  background: var(--background-light);
+}
+
+.sidebar-heading {
+  color: var(--primary-color);
+  font-weight: bold;
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.sidebar ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.sidebar li {
+  padding: 12px 0;
+  font-weight: 500;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: color 0.3s, background 0.3s;
+}
+
+.sidebar li:hover,
+.sidebar li.active {
+  color: var(--primary-color);
+  background-color: var(--hover-bg);
+  padding-left: 10px;
+}
+
+.main-content {
+  flex-grow: 1;
+  padding: 2rem;
+  background-color: var(--background-light);
+}
+
+.profile-content p {
+  margin: 8px 0;
+  font-size: 15px;
+  color: #333;
+}
+
+.contact-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  min-height: 250px;
+  flex-direction: column;
+  text-align: center;
+}
+
+.contact-box {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 24px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  color: #333;
+  width: 100%;
+  max-width: 320px;
+}
+
+.contact-box h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.contact-box p {
+  font-size: 15px;
+  margin: 8px 0;
+  word-wrap: break-word;
+}
+
+/* Responsive Typography & Spacing */
+@media (min-width: 600px) {
+  .contact-box {
+    padding: 30px 35px;
+    max-width: 400px;
+  }
+
+  .contact-box h2 {
+    font-size: 22px;
+  }
+
+  .contact-box p {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 900px) {
+  .contact-container {
+    padding: 40px;
+  }
+
+  .contact-box {
+    padding: 40px 50px;
+    max-width: 500px;
+  }
+
+  .contact-box h2 {
+    font-size: 24px;
+  }
+
+  .contact-box p {
+    font-size: 17px;
+  }
+}
+
+.address-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 600px) {
+  .address-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .address-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.address-card {
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.address-card p {
+  margin: 0.6rem 0;
+  color: var(--text-color);
+  font-size: 0.95rem;
+  word-wrap: break-word;
+}
+
+.address-card input,
+.address-card select {
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.address-card input:focus,
+.address-card select:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.address-card button {
+  margin-top: 0.4rem;
+  margin-right: 0.5rem;
+  padding: 0.5rem 1.2rem;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.address-card button:nth-of-type(1) {
+  background-color: var(--primary-color);
+  color: #fff;
+  border-color: var(--primary-color);
+}
+
+.address-card button:nth-of-type(2) {
+  background-color: #fff;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.address-card button:hover {
+  opacity: 0.95;
+}
+
+.add-address-btn {
+  background-color: #fff;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+  width: 100%;
+  max-width: 200px;
+  text-align: center;
+  margin: 1rem auto 0;
+}
+
+.add-address-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* Optional: Make the buttons stack vertically on very small screens */
+@media (max-width: 480px) {
+  .address-card button {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 0.5rem 0;
+  }
+}
+
+.order-card {
+  background-color: #fff;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.order-card h4 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  color: var(--primary-color);
+  word-wrap: break-word;
+}
+
+.order-card p {
+  margin: 0.4rem 0;
+  font-size: 0.95rem;
+  color: var(--text-color);
+  word-break: break-word;
+}
+
+.order-items {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #fafafa;
+  border-left: 4px solid var(--primary-color);
+  border-radius: 6px;
+}
+
+.order-item {
+  margin-bottom: 0.8rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px dashed var(--border-color);
+}
+
+.order-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.order-item p {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .order-card {
+    padding: 1rem 0.8rem;
+  }
+
+  .order-card h4 {
+    font-size: 1rem;
+  }
+
+  .order-card p,
+  .order-item p {
+    font-size: 0.88rem;
+  }
+
+  .order-items {
+    padding: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-card {
+    padding: 0.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .order-card h4 {
+    font-size: 0.98rem;
+  }
+
+  .order-card p,
+  .order-item p {
+    font-size: 0.85rem;
+  }
+
+  .order-items {
+    padding: 0.6rem;
+  }
+
+  .order-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .order-btn-group button {
+    width: 100%;
+    font-size: 0.9rem;
+    padding: 0.6rem;
+  }
+}

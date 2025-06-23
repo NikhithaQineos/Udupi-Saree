@@ -1,0 +1,181 @@
+/* PaymentPage.css */
+
+.payment-page {
+  display: flex;
+  gap: 40px;
+  max-width: 1000px;
+  margin: 30px auto;
+  font-family: Arial, sans-serif;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.address-form,
+.saved-addresses {
+  flex: 1 1 350px;
+  min-width: 300px;
+  max-width: 500px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #faf0e9;
+}
+
+.address-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px 20px;
+  margin-bottom: 20px;
+}
+
+.address-grid input,
+.address-grid select {
+  padding: 8px;
+  width: 100%;
+}
+
+.save-btn,
+.cancel-btn,
+.proceed-btn,
+.razorpay-btn,
+.cod-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  width: 100%;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.save-btn {
+  background-color: #b78c6a;
+}
+
+.cancel-btn {
+  margin-top: 10px;
+  background-color: #686868;
+}
+
+.saved-addresses-list {
+  flex-grow: 1;
+  overflow-y: auto;
+  max-height: 400px;
+  min-height: 100px;
+  padding-right: 10px;
+}
+
+.address-card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: #f9f9f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.address-card.selected {
+  background-color: #ffffff;
+}
+
+.address-card input[type="radio"] {
+  margin-right: 10px;
+}
+
+.address-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.proceed-btn {
+  margin-top: auto;
+  background-color: #0e0c0a;
+}
+
+.proceed-btn.disabled {
+  background-color: rgb(109, 109, 109);
+  cursor: not-allowed;
+}
+
+.selected-address-display {
+  margin-top: 15px;
+  padding: 12px;
+  background-color: #eef9f9;
+  border-radius: 5px;
+  border: 1px solid #007bff;
+  font-weight: bold;
+  text-align: center;
+}
+
+.payment-options {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.razorpay-btn {
+  background-color: #f1805e;
+}
+
+.cod-btn {
+  background-color: #6c757d;
+}
+
+.success-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.success-dialog {
+  background: white;
+  padding: 40px;
+  border-radius: 10px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+}
+
+.success-dialog button {
+  margin-top: 20px;
+  padding: 10px 25px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+@media (min-width: 600px) {
+  .address-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .payment-options {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+.payment-options label {
+  cursor: pointer;
+  font-size: 16px;
+  color: #333;
+}
