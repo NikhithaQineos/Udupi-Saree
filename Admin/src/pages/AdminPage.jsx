@@ -1247,7 +1247,7 @@ export default function AdminPanel() {
                                                     sx={{ mt: 1 }}
                                                     onClick={() => handleMarkAsDelivered(order._id)}
                                                 >
-                                                    Mark as Delivered
+                                                    Mark as delivered
                                                 </Button>
                                             )}
                                         </TableCell>

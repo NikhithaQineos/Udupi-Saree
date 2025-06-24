@@ -142,50 +142,48 @@ const ProductListUnified = () => {
       <h2 className="product-heading">
         {catId ? "Products in Category" : "All Products"}
       </h2>
+
+      {/* Always render filters if on /api/getproduct (not homepage, not byCatId) */}
+      {!isHomePage && !catId && (
+        <div className="filter-bar">
+          <label>
+            Color:
+            <select value={selectedColor} onChange={(e) => setSelectedColor(e.target.value)}>
+              <option value="">All</option>
+              {availableColors.map((color) => (
+                <option key={color} value={color}>{color}</option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            Fabric:
+            <select value={selectedFabric} onChange={(e) => setSelectedFabric(e.target.value)}>
+              <option value="">All</option>
+              {availableFabrics.map((fabric) => (
+                <option key={fabric} value={fabric}>{fabric}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
       {loading ? (
         <p className="loading-text">Loading...</p>
       ) : products.length === 0 ? (
         <p className="loading-text">No products found.</p>
       ) : (
-        <div
-          className={`product-grid-wrapper ${isHomePage ? "scrollable" : ""}`}
-        >
-          {!isHomePage && (
-            <div className="filter-bar">
-              <label>
-                Color:
-                <select value={selectedColor} onChange={(e) => setSelectedColor(e.target.value)}>
-                  <option value="">All</option>
-                  {availableColors.map((color) => (
-                    <option key={color} value={color}>{color}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                Fabric:
-                <select value={selectedFabric} onChange={(e) => setSelectedFabric(e.target.value)}>
-                  <option value="">All</option>
-                  {availableFabrics.map((fabric) => (
-                    <option key={fabric} value={fabric}>{fabric}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-
+        <div className={`product-grid-wrapper ${isHomePage ? "scrollable" : ""}`}>
           <div className="product-grid">
             {products.map((product) => {
               const discount = product.offer?.offerpercentage || 0;
               const originalPrice = Number(product.productprice);
               const discountedPrice = originalPrice - (originalPrice * discount) / 100;
-              // const isWishlisted = wishlist.includes(product._id);
               const isWishlisted = product && wishlistItems.some(item => item._id === product._id);
               const isLowStock = product.productquantity < 20;
               const existingItem = cartItems.find(item => item.id === product._id);
               const isMaxQuantityReached = existingItem && existingItem.quantity >= product.productquantity;
               const isOutOfStock = product.productquantity === 0;
-
 
               return (
                 <div
@@ -194,9 +192,7 @@ const ProductListUnified = () => {
                   onClick={() => navigate(`/product/${product._id}`)}
                 >
                   <div className="product-card">
-                    {isLowStock && (
-                      <span className="low-stock-tag">Low Stock</span>
-                    )}
+                    {isLowStock && <span className="low-stock-tag">Low Stock</span>}
 
                     <img
                       src={
@@ -211,17 +207,11 @@ const ProductListUnified = () => {
                     <p className="product-price">
                       {discount ? (
                         <>
-                          <span className="discounted-price">
-                            ₹{discountedPrice.toFixed(2)}
-                          </span>
-                          <span className="original-price">
-                            ₹{originalPrice.toFixed(2)}
-                          </span>
+                          <span className="discounted-price">₹{discountedPrice.toFixed(2)}</span>
+                          <span className="original-price">₹{originalPrice.toFixed(2)}</span>
                         </>
                       ) : (
-                        <span className="discounted-price">
-                          ₹{originalPrice.toFixed(2)}
-                        </span>
+                        <span className="discounted-price">₹{originalPrice.toFixed(2)}</span>
                       )}
                     </p>
                     <div className="product-actions">
@@ -237,11 +227,7 @@ const ProductListUnified = () => {
                           cursor: isOutOfStock || isMaxQuantityReached ? "not-allowed" : "pointer",
                         }}
                       >
-                        🛒 {isOutOfStock
-                          ? "Out of Stock"
-                          : isMaxQuantityReached
-                            ? "Out of Stock"
-                            : "Add"}
+                        🛒 {isOutOfStock || isMaxQuantityReached ? "Out of Stock" : "Add"}
                       </button>
 
                       <button
