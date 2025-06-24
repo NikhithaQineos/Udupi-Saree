@@ -6,11 +6,7 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/"); // Folder to save images
   },
-//   filename: function (req, file, cb) {
-//     const uniqueName = Date.now() + "-" + file.originalname;
-//     cb(null, uniqueName);
-//   },
-// });
+
 filename: function (req, file, cb) {
   const cleanName = file.originalname.replace(/\s+/g, "-"); // Replace spaces
   const uniqueName = `${Date.now()}-${cleanName}`;
@@ -26,7 +22,8 @@ const fileFilter = (req, file, cb) => {
   if (extname && mimetype) {
     cb(null, true);
   } else {
-    cb("Only images are allowed");
+    console.log("Rejected file:", file.originalname); // Add this
+    cb("Only images are allowed", false);
   }
 };
 

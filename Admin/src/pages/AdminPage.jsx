@@ -226,11 +226,11 @@ export default function AdminPanel() {
         formData.append("productgst", productgst);
         formData.append("productcolor", productcolor);
         formData.append("productfabric", productfabric);
-        formData.append("offerpercentage", offerpercentage || 0);
+        formData.append("offerpercentage", offerpercentage);
         if (validTill) formData.append("validTill", validTill);
         formData.append("cat_id", catId);
 
-        if (productimage) {
+        if (productimage && productimage.length > 0) {
             for (let i = 0; i < productimage.length; i++) {
                 formData.append("productimages", productimage[i]);
             }
@@ -273,6 +273,49 @@ export default function AdminPanel() {
             console.error("Error saving product:", error);
         }
     };
+
+    // const handleProductSubmit = async (e) => {
+    //     e.preventDefault();
+
+    //     const formData = new FormData();
+    //     formData.append("productname", productname);
+    //     formData.append("productprice", productprice);
+    //     formData.append("productdescription", productdescription);
+    //     formData.append("productquantity", productquantity);
+    //     formData.append("productgst", productgst);
+    //     formData.append("productcolor", productcolor);
+    //     formData.append("productfabric", productfabric);
+    //     formData.append("offerpercentage", offerpercentage);
+    //     formData.append("validTill", validTill);
+    //     formData.append("cat_id", catId);
+
+    //     if (productimage && productimage.length > 0) {
+    //         for (let i = 0; i < productimage.length; i++) {
+    //             formData.append("productimages", productimage[i]); // same key as multer: "productimages"
+    //         }
+    //     }
+
+    //     try {
+    //         const response = await axios.post(`${baseurl}/api/createproduct`, formData, {
+    //             headers: {
+    //                 "Content-Type": "multipart/form-data",
+    //             },
+    //         });
+
+    //         if (response.data?.newproduct) {
+    //             setSuccessMessage("Product added successfully!");
+    //             fetchProducts(); // refresh product list
+    //             // Reset form
+    //             setProductName(""); setProductPrice(""); setProductDescription("");
+    //             setProductQuantity(""); setProductGst(""); setProductColor("");
+    //             setProductFabric(""); setOfferPercentage(""); setValidTill("");
+    //             setCatId(""); setProductImage(null);
+    //         }
+    //     } catch (error) {
+    //         console.error("Error adding product:", error);
+    //         alert("Error adding product. Check console for details.");
+    //     }
+    // };
 
 
     const handleDeleteProduct = async (id) => {
@@ -824,7 +867,7 @@ export default function AdminPanel() {
                                 onChange={(e) => setOfferPercentage(e.target.value)}
                                 margin="normal"
                                 inputProps={{ min: 0, max: 100 }}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2} }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                             />
 
                             <TextField
@@ -836,7 +879,7 @@ export default function AdminPanel() {
                                 margin="normal"
                                 InputLabelProps={{ shrink: true }}
                                 inputProps={{ min: new Date().toISOString().split("T")[0] }}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2} }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                             />
 
                             {/* Category Select */}
@@ -846,7 +889,7 @@ export default function AdminPanel() {
                                     value={catId}
                                     onChange={(e) => setCatId(e.target.value)}
                                     label="Category"
-                                    sx={{borderRadius: 2 }}
+                                    sx={{ borderRadius: 2 }}
                                 >
                                     {categories.map((cat) => (
                                         <MenuItem value={cat._id} key={cat._id}>
@@ -916,7 +959,7 @@ export default function AdminPanel() {
                                             setOfferPercentage("");
                                             setValidTill("");
                                             setCatId("");
-                                            setProductImage(null);
+                                            setProductImage([]);
                                         }}
                                     >
                                         Cancel
