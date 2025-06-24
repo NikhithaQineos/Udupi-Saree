@@ -430,7 +430,6 @@ const Profile = () => {
 
     const handleLogout = () => {
         localStorage.removeItem("user");
-        setUser(null);
         navigate("/auth");
     };
 
