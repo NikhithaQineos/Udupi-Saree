@@ -430,7 +430,8 @@ const Profile = () => {
 
     const handleLogout = () => {
         localStorage.removeItem("user");
-        window.location.href = "/auth";
+        setUser(null);
+        navigate("/auth");
     };
 
     return (
