@@ -4,8 +4,10 @@ import "./Profile.css";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toWords } from "number-to-words";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
+    const navigate = useNavigate();
     const [selectedTab, setSelectedTab] = useState("addresses");
     const [addresses, setAddresses] = useState([]);
     const [orders, setOrders] = useState([]);
@@ -256,8 +258,6 @@ const Profile = () => {
         // ======= Save Invoice =======
         doc.save(`Invoice_${invoiceNumber}.pdf`);
     };
-
-
 
     const renderOrders = () => {
         return (
