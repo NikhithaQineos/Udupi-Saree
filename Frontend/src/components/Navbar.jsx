@@ -234,7 +234,17 @@ const Navbar = () => {
             </div>
 
             {/* Cart Icon */}
-            <div className="position-relative ms-3" style={{ cursor: "pointer" }} onClick={() => navigate("/cart")}>
+            <div
+              className="position-relative ms-3"
+              style={{ cursor: "pointer" }}
+              onClick={() => {
+                if (user) {
+                  navigate("/cart");
+                } else {
+                  navigate("/auth");
+                }
+              }}
+            >
               <FaShoppingCart size={22} color="black" />
               {cartCount > 0 && (
                 <span
@@ -253,7 +263,16 @@ const Navbar = () => {
                 </span>
               )}
             </div>
-            <span onClick={() => navigate("/wishlist")} style={{ cursor: "pointer" }}>
+            <span
+              onClick={() => {
+                if (user) {
+                  navigate("/wishlist");
+                } else {
+                  navigate("/auth");
+                }
+              }}
+              style={{ cursor: "pointer" }}
+            >
               <FaHeart
                 size={22}
                 color={wishlistItems.length > 0 ? "red" : "gray"}
@@ -264,7 +283,13 @@ const Navbar = () => {
               src="https://cdn-icons-png.flaticon.com/128/1144/1144760.png"
               alt="User Icon"
               className="icon ms-3"
-              onClick={() => navigate("/profile")}
+              onClick={() => {
+                if (user) {
+                  navigate("/profile");
+                } else {
+                  navigate("/auth");
+                }
+              }}
             />
           </div>
         </div>

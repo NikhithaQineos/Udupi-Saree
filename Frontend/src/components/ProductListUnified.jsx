@@ -44,6 +44,11 @@ const ProductListUnified = () => {
 
 
   const handleAddToCart = (product) => {
+    if (!user?._id) {
+      alert("Please login to add items to the cart.");
+      return;
+    }
+
     const existingItem = cartItems.find(item => item.id === product._id);
 
     const discount = product.offer?.offerpercentage || 0;
@@ -77,6 +82,7 @@ const ProductListUnified = () => {
       setCartItems([...cartItems, newItem]);
     }
   };
+
 
   useEffect(() => {
     if (user?._id) {
