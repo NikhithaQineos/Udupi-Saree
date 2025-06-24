@@ -71,6 +71,11 @@ const ProductDetails = () => {
     : originalPrice;
 
   const handleAddToCart = () => {
+    if (!user?._id) {
+      alert("Please login to add items to the cart.");
+      return;
+    }
+
     const newItem = {
       id: product._id,
       name: product.productname,
@@ -96,6 +101,7 @@ const ProductDetails = () => {
       setCartItems([...cartItems, newItem]);
     }
   };
+
 
   const toggleWishlist = async () => {
     if (!user?._id) {
@@ -124,9 +130,8 @@ const ProductDetails = () => {
               key={index}
               src={`${baseurl}/uploads/${img}`}
               alt={`Thumbnail ${index + 1}`}
-              className={`thumbnail ${
-                mainImage === `${baseurl}/uploads/${img}` ? "active-thumbnail" : ""
-              }`}
+              className={`thumbnail ${mainImage === `${baseurl}/uploads/${img}` ? "active-thumbnail" : ""
+                }`}
               onClick={() => setMainImage(`${baseurl}/uploads/${img}`)}
             />
           ))}
