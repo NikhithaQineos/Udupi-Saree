@@ -24,10 +24,17 @@ import {
 } from "@mui/material";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
-
 import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
 import Autocomplete from "@mui/material/Autocomplete";
+import { FormLabel, RadioGroup, Radio, FormControlLabel, Checkbox, FormGroup } from "@mui/material";
+import {
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions
+} from "@mui/material";
 
 const fabricOptions = ["Silk", "Cotton", "Linen", "Georgette", "Chiffon", "Velvet", "Net", "Organza"];
 
@@ -38,7 +45,6 @@ const drawerWidth = 240;
 export default function AdminPanel() {
 
     const [searchTerm, setSearchTerm] = useState("");
-
     const [activeSection, setActiveSection] = useState("category");
     const [categories, setCategories] = useState([]);
     const [products, setProducts] = useState([]);
@@ -46,10 +52,20 @@ export default function AdminPanel() {
     const [users, setUsers] = useState([]);
     const [orders, setOrders] = useState([]);
     const [sortOption, setSortOption] = useState("latest");
+    const [offers, setOffers] = useState([]);
+    const [offerTargetType, setOfferTargetType] = useState("product"); // or "category"
+    const [offerTargetId, setOfferTargetId] = useState("");
+    const [offerType, setOfferType] = useState("percentage"); // or "rupees"
+    const [offerValue, setOfferValue] = useState("");
+    const [offerValidTill, setOfferValidTill] = useState("");
+    const [selectedTargetIds, setSelectedTargetIds] = useState([]);
+    const [applyToAll, setApplyToAll] = useState(false);
 
     const [fromDate, setFromDate] = useState("");
     const [toDate, setToDate] = useState("");
     const [paymentFilter, setPaymentFilter] = useState("all");
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [dialogMessage, setDialogMessage] = useState("");
 
     // Sort first
     const sortedorders = [...orders].sort((a, b) => {
@@ -157,6 +173,7 @@ export default function AdminPanel() {
         fetchContactMessages();
         fetchUsers();
         fetchOrders();
+        fetchOffers();
     }, []);
 
     const startEditingProduct = (product) => {
@@ -274,50 +291,6 @@ export default function AdminPanel() {
         }
     };
 
-    // const handleProductSubmit = async (e) => {
-    //     e.preventDefault();
-
-    //     const formData = new FormData();
-    //     formData.append("productname", productname);
-    //     formData.append("productprice", productprice);
-    //     formData.append("productdescription", productdescription);
-    //     formData.append("productquantity", productquantity);
-    //     formData.append("productgst", productgst);
-    //     formData.append("productcolor", productcolor);
-    //     formData.append("productfabric", productfabric);
-    //     formData.append("offerpercentage", offerpercentage);
-    //     formData.append("validTill", validTill);
-    //     formData.append("cat_id", catId);
-
-    //     if (productimage && productimage.length > 0) {
-    //         for (let i = 0; i < productimage.length; i++) {
-    //             formData.append("productimages", productimage[i]); // same key as multer: "productimages"
-    //         }
-    //     }
-
-    //     try {
-    //         const response = await axios.post(`${baseurl}/api/createproduct`, formData, {
-    //             headers: {
-    //                 "Content-Type": "multipart/form-data",
-    //             },
-    //         });
-
-    //         if (response.data?.newproduct) {
-    //             setSuccessMessage("Product added successfully!");
-    //             fetchProducts(); // refresh product list
-    //             // Reset form
-    //             setProductName(""); setProductPrice(""); setProductDescription("");
-    //             setProductQuantity(""); setProductGst(""); setProductColor("");
-    //             setProductFabric(""); setOfferPercentage(""); setValidTill("");
-    //             setCatId(""); setProductImage(null);
-    //         }
-    //     } catch (error) {
-    //         console.error("Error adding product:", error);
-    //         alert("Error adding product. Check console for details.");
-    //     }
-    // };
-
-
     const handleDeleteProduct = async (id) => {
         if (!window.confirm("Are you sure you want to delete this product?")) return;
         try {
@@ -362,7 +335,6 @@ export default function AdminPanel() {
         }
     };
 
-
     const fetchOrders = async () => {
         try {
             const res = await axios.get(`${baseurl}/api/getorder`);
@@ -383,6 +355,233 @@ export default function AdminPanel() {
             fetchOrders(); // 👈 This re-fetches and updates the table
         } catch (error) {
             console.error("Failed to mark as delivered:", error);
+        }
+    };
+
+    const fetchOffers = async () => {
+        try {
+            const res = await axios.get(`${baseurl}/api/list`);
+            console.log("Offers fetched:", res.data.offers); // Debug log
+            setOffers(res.data.offers || []);
+        } catch (err) {
+            console.error("Error fetching offers:", err);
+        }
+    };
+
+
+    const getEffectivePrice = (product) => {
+        let price = product.productprice;
+        const today = new Date();
+
+        if (
+            product.offer &&
+            product.offer.validTill &&
+            new Date(product.offer.validTill) >= today
+        ) {
+            price -=
+                product.offer.offerpercentage > 0
+                    ? price * (product.offer.offerpercentage / 100)
+                    : 0;
+        }
+
+        // 2. Offer model-level category/product offer
+        const applicableOffer = offers.find((offer) => {
+            return (
+                offer.validTill &&
+                new Date(offer.validTill) >= today &&
+                ((offer.targetType === "product" && offer.targetId === product._id) ||
+                    (offer.targetType === "category" &&
+                        offer.targetId === product.cat_id?._id))
+            );
+        });
+
+        if (applicableOffer) {
+            if (applicableOffer.offerType === "percentage") {
+                price -= price * (applicableOffer.offerValue / 100);
+            } else if (applicableOffer.offerType === "rupees") {
+                price -= applicableOffer.offerValue;
+            }
+        }
+
+        return price.toFixed(2);
+    };
+
+
+
+    const checkIfApplyToAllAllowed = async () => {
+        try {
+            const today = new Date();
+            const res = await axios.get(`${baseurl}/api/list`);
+            const activeOffers = res.data.offers || [];
+
+            // Check for any product or category-level active offer
+            const hasProductOffers = activeOffers.some(
+                (offer) =>
+                    offer.targetType === "product" &&
+                    new Date(offer.validTill) >= today
+            );
+
+            const hasCategoryOffers = activeOffers.some(
+                (offer) =>
+                    offer.targetType === "category" &&
+                    new Date(offer.validTill) >= today
+            );
+
+            return !(hasProductOffers || hasCategoryOffers); // ✅ true means allowed
+        } catch (err) {
+            console.error("Error checking applyToAll condition", err);
+            return false;
+        }
+    };
+
+
+    // const handleTargetChange = async (e, id) => {
+    //     if (e.target.checked) {
+    //         try {
+    //             const today = new Date();
+    //             const offersRes = await axios.get(`${baseurl}/api/list`);
+    //             const activeOffers = offersRes.data.offers || [];
+
+    //             if (offerTargetType === "category") {
+    //                 //  1. Check if this category itself has a direct offer
+    //                 const isCategoryOffered = activeOffers.some((offer) =>
+    //                     offer.targetType === "category" &&
+    //                     new Date(offer.validTill) >= today &&
+    //                     offer.targetIds?.includes(id)
+    //                 );
+
+
+    //                 const productRes = await axios.get(`${baseurl}/api/getproductbycatid/${id}`);
+    //                 const productsInCategory = productRes.data.products || [];
+
+    //                 const anyProductHasOffer = productsInCategory.some((product) =>
+    //                     activeOffers.some((offer) =>
+    //                         offer.targetType === "product" &&
+    //                         new Date(offer.validTill) >= today &&
+    //                         (offer.targetIds?.includes(product._id) || offer.targetIds === "all")
+    //                     )
+    //                 );
+
+    //                 if (isCategoryOffered) {
+    //                     setDialogMessage("An offer is already running directly on this category.");
+    //                     setDialogOpen(true);
+    //                 } else if (anyProductHasOffer) {
+    //                     setDialogMessage("One or more products under this category already have an active offer.");
+    //                     setDialogOpen(true);
+    //                 }
+
+    //                 // Still allow selection
+    //                 setSelectedTargetIds([...selectedTargetIds, id]);
+    //             }
+
+    //             if (offerTargetType === "product") {
+    //                 const isAlreadyOffered = activeOffers.some((offer) =>
+    //                     offer.targetType === "product" &&
+    //                     new Date(offer.validTill) >= today &&
+    //                     (offer.targetIds?.includes(id) || offer.targetIds === "all")
+    //                 );
+
+    //                 if (isAlreadyOffered) {
+    //                     setDialogMessage("An offer is already running for this product.");
+    //                     setDialogOpen(true);
+    //                 }
+
+    //                 setSelectedTargetIds([...selectedTargetIds, id]);
+    //             }
+    //         } catch (error) {
+    //             console.error("Error during offer check:", error);
+    //         }
+    //     } else {
+    //         // Unselect
+    //         setSelectedTargetIds(selectedTargetIds.filter((tid) => tid !== id));
+    //     }
+    // };
+    const handleTargetChange = async (e, id) => {
+        if (e.target.checked) {
+            try {
+                const today = new Date();
+                const offersRes = await axios.get(`${baseurl}/api/list`);
+                const activeOffers = offersRes.data.offers || [];
+
+                if (offerTargetType === "category") {
+                    const isCategoryOffered = activeOffers.some(
+                        (offer) =>
+                            offer.targetType === "category" &&
+                            new Date(offer.validTill) >= today &&
+                            offer.targetIds?.includes(id)
+                    );
+
+                    const productRes = await axios.get(`${baseurl}/api/getproductbycatid/${id}`);
+                    const productsInCategory = productRes.data.products || [];
+
+                    const anyProductHasOffer = productsInCategory.some((product) =>
+                        activeOffers.some(
+                            (offer) =>
+                                offer.targetType === "product" &&
+                                new Date(offer.validTill) >= today &&
+                                (offer.targetIds?.includes(product._id) || offer.targetIds === "all")
+                        )
+                    );
+
+                    if (isCategoryOffered) {
+                        setDialogMessage("An offer is already running directly on this category.");
+                        setDialogOpen(true);
+                        return; // ❌ Don't add to selection
+                    }
+
+                    if (anyProductHasOffer) {
+                        setDialogMessage("One or more products under this category already have an active offer.");
+                        setDialogOpen(true);
+                        return; // ❌ Don't add to selection
+                    }
+
+                    // ✅ Safe to select
+                    setSelectedTargetIds([...selectedTargetIds, id]);
+                }
+
+                if (offerTargetType === "product") {
+                    // 1. Check if this product already has a direct offer
+                    const isAlreadyOffered = activeOffers.some(
+                        (offer) =>
+                            offer.targetType === "product" &&
+                            new Date(offer.validTill) >= today &&
+                            (offer.targetIds?.includes(id) || offer.targetIds === "all")
+                    );
+
+                    if (isAlreadyOffered) {
+                        setDialogMessage("An offer is already running for this product.");
+                        setDialogOpen(true);
+                        return;
+                    }
+
+                    // 2. ✅ Check if this product's category has an offer
+                    const productRes = await axios.get(`${baseurl}/api/getproductbyid/${id}`);
+                    const productData = productRes.data.products; // assuming .products is single object
+                    const categoryId = productData.cat_id;
+
+                    const isCategoryOffered = activeOffers.some(
+                        (offer) =>
+                            offer.targetType === "category" &&
+                            new Date(offer.validTill) >= today &&
+                            offer.targetIds?.includes(categoryId)
+                    );
+
+                    if (isCategoryOffered) {
+                        setDialogMessage("This product's category already has an active offer.");
+                        setDialogOpen(true);
+                        return;
+                    }
+
+                    // ✅ Safe to select
+                    setSelectedTargetIds([...selectedTargetIds, id]);
+                }
+
+            } catch (error) {
+                console.error("Error during offer check:", error);
+            }
+        } else {
+            // ✅ Unselect
+            setSelectedTargetIds(selectedTargetIds.filter((tid) => tid !== id));
         }
     };
 
@@ -428,6 +627,7 @@ export default function AdminPanel() {
                         </ListItemButton>
 
                     </ListItem>
+
                     <ListItem disablePadding>
                         <ListItemButton
                             selected={activeSection === "product"}
@@ -507,6 +707,10 @@ export default function AdminPanel() {
                             <ListItemText primary="User Orders" />
                         </ListItemButton>
                     </ListItem>
+
+                    <ListItemButton onClick={() => setActiveSection("offer")}>
+                        <ListItemText primary="Offer" />
+                    </ListItemButton>
                 </List>
             </Drawer>
 
@@ -990,21 +1194,20 @@ export default function AdminPanel() {
                                     <Grid
                                         item
                                         key={prod._id}
-                                        xs={6}
-                                        sm={4}
+                                        xs={12}
+                                        sm={6}
                                         md={3}
                                         sx={{ display: 'flex', justifyContent: 'center' }}
                                     >
                                         <Card
                                             sx={{
                                                 width: '100%',
-                                                maxWidth: 272,
-                                                height: 560,
+                                                maxWidth: 280,
+                                                height: 550, // fixed card height
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 justifyContent: 'space-between',
                                                 boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-                                                borderRadius: 2,
                                                 transition: 'transform 0.2s ease-in-out',
                                                 '&:hover': {
                                                     transform: 'scale(1.03)',
@@ -1022,7 +1225,7 @@ export default function AdminPanel() {
                                                 alt={prod.productname}
                                             />
 
-                                            <CardContent sx={{ flexGrow: 1, textAlign: 'left' }}>
+                                            <CardContent sx={{ flexGrow: 1, overflow: 'hidden', textAlign: 'left' }}>
                                                 <Typography variant="h6" fontWeight="bold" gutterBottom noWrap>
                                                     {prod.productname}
                                                 </Typography>
@@ -1042,36 +1245,39 @@ export default function AdminPanel() {
                                                     {prod.productdescription}
                                                 </Typography>
 
-                                                <Typography variant="body2">Price: ₹{prod.productprice}</Typography>
-                                                <Typography variant="body2">Qty: {prod.productquantity}</Typography>
-                                                <Typography variant="body2">GST: {prod.productgst}%</Typography>
-                                                {prod.offer?.offerpercentage > 0 && (
-                                                    <Typography variant="body2">
-                                                        Offer: {prod.offer.offerpercentage}% off
-                                                    </Typography>
-                                                )}
-                                                {prod.offer?.validTill && new Date(prod.offer.validTill) >= new Date() && (
-                                                    <Typography variant="body2">
-                                                        Valid Till: {new Date(prod.offer.validTill).toLocaleDateString()}
-                                                    </Typography>
-                                                )}
-                                                <Typography variant="body2">Category: {prod.cat_id?.catname || "No category"}</Typography>
-                                                <Typography variant="body2">Color: {prod.productcolor}</Typography>
-                                                <Typography variant="body2">Fabric: {prod.productfabric}</Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Price: ₹
+                                                    <span style={{ textDecoration: "line-through" }}>
+                                                        {prod.productprice}
+                                                    </span>{" "}
+                                                    <span style={{ color: "#b78c6a", fontWeight: "bold" }}>
+                                                        ₹{getEffectivePrice(prod, offers)}
+                                                    </span>
+                                                </Typography>
+
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Qty: {prod.productquantity}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    GST: {prod.productgst}%
+                                                </Typography>
+
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Category: {prod.cat_id?.catname || "No category"}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Color: {prod.productcolor}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Fabric: {prod.productfabric}
+                                                </Typography>
                                             </CardContent>
 
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pb: 2 }}>
                                                 <Button
                                                     variant="outlined"
+                                                    color="primary"
                                                     size="small"
-                                                    sx={{
-                                                        color: '#a0522d',
-                                                        borderColor: '#a0522d',
-                                                        '&:hover': {
-                                                            backgroundColor: '#a0522d',
-                                                            color: '#fff',
-                                                        },
-                                                    }}
                                                     onClick={() => startEditingProduct(prod)}
                                                 >
                                                     Edit
@@ -1089,6 +1295,7 @@ export default function AdminPanel() {
                                     </Grid>
                                 ))}
                         </Grid>
+
                     </Box>
                 )}
 
@@ -1300,7 +1507,14 @@ export default function AdminPanel() {
                                                     <Typography variant="body2"><strong>{item.productname}</strong></Typography>
                                                     <Typography variant="body2">Qty: {item.productquantity}</Typography>
                                                     <Typography variant="body2">Price: ₹{item.productprice} | GST: {item.productgst}%</Typography>
-                                                    <Typography variant="body2">Offer: {item.offer?.offerpercentage || "N/A"}%</Typography>
+                                                    <Typography variant="body2">
+                                                        Offer:{" "}
+                                                        {item.offer
+                                                            ? item.offer.offerType === "percentage"
+                                                                ? `${item.offer.offerValue}%`
+                                                                : `₹${item.offer.offerValue}`
+                                                            : "N/A"}
+                                                    </Typography>
                                                     <Typography variant="body2">
                                                         Valid Till:{" "}
                                                         {item.offer?.validTill
@@ -1318,6 +1532,484 @@ export default function AdminPanel() {
                     </Box>
                 )}
 
+                {/* {activeSection === "offer" && (
+                    <Box p={2}>
+                        <Typography variant="h6">Create Offer</Typography>
+
+                        <FormControl component="fieldset" sx={{ mt: 2 }}>
+                            <FormLabel component="legend">Apply Offer To</FormLabel>
+                            <RadioGroup
+                                row
+                                value={offerTargetType}
+                                onChange={(e) => {
+                                    setOfferTargetType(e.target.value);
+                                    setSelectedTargetIds([]);
+                                    setApplyToAll(false);
+                                }}
+                            >
+                                <FormControlLabel value="category" control={<Radio />} label="Category" />
+                                <FormControlLabel value="product" control={<Radio />} label="Product" />
+                            </RadioGroup>
+                        </FormControl>
+
+                        {offerTargetType === "category" && (
+                            <FormGroup>
+                                {categories.map((cat) => (
+                                    <FormControlLabel
+                                        key={cat._id}
+                                        control={
+                                            <Checkbox
+                                                checked={selectedTargetIds.includes(cat._id)}
+                                                onChange={(e) => handleTargetChange(e, cat._id)}
+                                            />
+                                        }
+                                        label={cat.catname}
+                                    />
+                                ))}
+                            </FormGroup>
+                        )}
+
+                        {offerTargetType === "product" && (
+                            <>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={applyToAll}
+                                            onChange={async (e) => {
+                                                const allowed = await checkIfApplyToAllAllowed();
+                                                if (!allowed) {
+                                                    setDialogMessage(
+                                                        "Cannot apply offer to all products: Some products or categories already have an active offer."
+                                                    );
+                                                    setDialogOpen(true);
+                                                    return;
+                                                }
+
+                                                setApplyToAll(e.target.checked);
+                                                setSelectedTargetIds([]);
+                                            }}
+                                        />
+                                    }
+                                    label="Apply to all products"
+                                />
+
+                                {!applyToAll && (
+                                    <FormGroup>
+                                        {products.map((prod) => (
+                                            <FormControlLabel
+                                                key={prod._id}
+                                                control={
+                                                    <Checkbox
+                                                        checked={selectedTargetIds.includes(prod._id)}
+                                                        onChange={(e) => handleTargetChange(e, prod._id)}
+                                                    />
+                                                }
+                                                label={prod.productname}
+                                            />
+                                        ))}
+                                    </FormGroup>
+                                )}
+                            </>
+                        )}
+
+                        <Box mt={2}>
+                            <FormControl fullWidth>
+                                <InputLabel>Offer Type</InputLabel>
+                                <Select
+                                    value={offerType}
+                                    onChange={(e) => setOfferType(e.target.value)}
+                                    label="Offer Type"
+                                >
+                                    <MenuItem value="percentage">Percentage</MenuItem>
+                                    <MenuItem value="rupees">Rupees</MenuItem>
+                                </Select>
+                            </FormControl>
+                            <TextField
+                                label="Offer Value"
+                                type="number"
+                                value={offerValue}
+                                onChange={(e) => setOfferValue(e.target.value)}
+                                fullWidth
+                                sx={{ mt: 2 }}
+                            />
+                            <TextField
+                                label="Valid Till"
+                                type="date"
+                                value={offerValidTill}
+                                onChange={(e) => setOfferValidTill(e.target.value)}
+                                InputLabelProps={{ shrink: true }}
+                                inputProps={{
+                                    min: new Date().toISOString().split("T")[0], // disables past dates
+                                }}
+                                fullWidth
+                                sx={{ mt: 2 }}
+                            />
+                            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+                                <DialogTitle>Offer Already Running</DialogTitle>
+                                <DialogContent>
+                                    <DialogContentText>{dialogMessage}</DialogContentText>
+                                </DialogContent>
+                                <DialogActions>
+                                    <Button onClick={() => setDialogOpen(false)} autoFocus>
+                                        OK
+                                    </Button>
+                                </DialogActions>
+                            </Dialog>
+                            <Button
+                                variant="contained"
+                                sx={{ mt: 2 }}
+                                onClick={async () => {
+                                    try {
+                                        const payload = {
+                                            targetType: offerTargetType,
+                                            offerType,
+                                            offerValue,
+                                            validTill: offerValidTill,
+                                            targetIds: applyToAll && offerTargetType === "product" ? "all" : selectedTargetIds,
+                                        };
+
+                                        const response = await axios.post(`${baseurl}/api/create`, payload);
+
+                                        fetchOffers(); // refresh list
+                                        alert("✅ Offer created successfully");
+
+                                        // Clear form state
+                                        setSelectedTargetIds([]);
+                                        setApplyToAll(false);
+                                        setOfferType("percentage");
+                                        setOfferValue("");
+                                        setOfferValidTill("");
+
+                                    } catch (err) {
+                                        const backendMessage =
+                                            err?.response?.data?.message ||
+                                            err?.message ||
+                                            "Something went wrong while creating the offer."
+                                    }
+
+
+                                }}
+                            >
+                                Create Offer
+                            </Button>
+                        </Box>
+                        <Box mt={4}>
+                            <Typography variant="h6" gutterBottom>All Offers</Typography>
+
+                            <TableContainer component={Paper}>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Target Type</TableCell>
+                                            <TableCell>Target Names</TableCell>
+                                            <TableCell>Offer Type</TableCell>
+                                            <TableCell>Offer Value</TableCell>
+                                            <TableCell>Valid Till</TableCell>
+                                            <TableCell>Actions</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {offers.map((offer) => (
+                                            <TableRow key={offer._id}>
+                                                <TableCell>{offer.targetType}</TableCell>
+                                                <TableCell>
+                                                    {(offer.targetNames || []).length > 0
+                                                        ? offer.targetNames.join(", ")
+                                                        : "N/A"}
+                                                </TableCell>
+                                                <TableCell>{offer.offerType}</TableCell>
+                                                <TableCell>
+                                                    {offer.offerType === "percentage"
+                                                        ? `${offer.offerValue}%`
+                                                        : `₹${offer.offerValue}`}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {new Date(offer.validTill).toLocaleDateString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="error"
+                                                        size="small"
+                                                        onClick={async () => {
+                                                            if (window.confirm("Are you sure you want to delete this offer?")) {
+                                                                try {
+                                                                    await axios.delete(`${baseurl}/api/delete/${offer._id}`);
+                                                                    fetchOffers();
+                                                                } catch (err) {
+                                                                    console.error("Delete failed:", err);
+                                                                    alert("Failed to delete offer");
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Box>
+
+                    </Box>
+                )} */}
+                {activeSection === "offer" && (
+                    <Box p={3}>
+                        <Typography variant="h5" gutterBottom>
+                            Create Offer
+                        </Typography>
+
+                        {/* Offer Target Selection */}
+                        <Box mt={2}>
+                            <FormControl component="fieldset" fullWidth>
+                                <FormLabel component="legend">Apply Offer To</FormLabel>
+                                <RadioGroup
+                                    row
+                                    value={offerTargetType}
+                                    onChange={(e) => {
+                                        setOfferTargetType(e.target.value);
+                                        setSelectedTargetIds([]);
+                                        setApplyToAll(false);
+                                    }}
+                                >
+                                    <FormControlLabel value="category" control={<Radio />} label="Category" />
+                                    <FormControlLabel value="product" control={<Radio />} label="Product" />
+                                </RadioGroup>
+                            </FormControl>
+                        </Box>
+
+                        {/* Category Selection */}
+                        {offerTargetType === "category" && (
+                            <Box mt={2} maxHeight="200px" overflow="auto" border={1} borderColor="#ddd" p={2} borderRadius={2}>
+                                <Typography variant="subtitle1" gutterBottom>
+                                    Select Categories
+                                </Typography>
+                                <FormGroup>
+                                    {categories.map((cat) => (
+                                        <FormControlLabel
+                                            key={cat._id}
+                                            control={
+                                                <Checkbox
+                                                    checked={selectedTargetIds.includes(cat._id)}
+                                                    onChange={(e) => handleTargetChange(e, cat._id)}
+                                                />
+                                            }
+                                            label={cat.catname}
+                                        />
+                                    ))}
+                                </FormGroup>
+                            </Box>
+                        )}
+
+                        {/* Product Selection */}
+                        {offerTargetType === "product" && (
+                            <Box mt={2}>
+                                <FormControlLabel
+                                    control={
+                                        <Checkbox
+                                            checked={applyToAll}
+                                            onChange={async (e) => {
+                                                const allowed = await checkIfApplyToAllAllowed();
+                                                if (!allowed) {
+                                                    setDialogMessage(
+                                                        "Cannot apply offer to all products: Some products or categories already have an active offer."
+                                                    );
+                                                    setDialogOpen(true);
+                                                    return;
+                                                }
+
+                                                setApplyToAll(e.target.checked);
+                                                setSelectedTargetIds([]);
+                                            }}
+                                        />
+                                    }
+                                    label="Apply to all products"
+                                />
+
+                                {!applyToAll && (
+                                    <Box mt={2} maxHeight="200px" overflow="auto" border={1} borderColor="#ddd" p={2} borderRadius={2}>
+                                        <Typography variant="subtitle1" gutterBottom>
+                                            Select Products
+                                        </Typography>
+                                        <FormGroup>
+                                            {products.map((prod) => (
+                                                <FormControlLabel
+                                                    key={prod._id}
+                                                    control={
+                                                        <Checkbox
+                                                            checked={selectedTargetIds.includes(prod._id)}
+                                                            onChange={(e) => handleTargetChange(e, prod._id)}
+                                                        />
+                                                    }
+                                                    label={prod.productname}
+                                                />
+                                            ))}
+                                        </FormGroup>
+                                    </Box>
+                                )}
+                            </Box>
+                        )}
+
+                        {/* Offer Details */}
+                        <Grid container spacing={2} mt={3}>
+                            <Grid item xs={12} sm={4}>
+                                <FormControl fullWidth>
+                                    <InputLabel>Offer Type</InputLabel>
+                                    <Select
+                                        value={offerType}
+                                        onChange={(e) => setOfferType(e.target.value)}
+                                        label="Offer Type"
+                                    >
+                                        <MenuItem value="percentage">Percentage</MenuItem>
+                                        <MenuItem value="rupees">Rupees</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            </Grid>
+
+                            <Grid item xs={12} sm={4}>
+                                <TextField
+                                    label="Offer Value"
+                                    type="number"
+                                    value={offerValue}
+                                    onChange={(e) => setOfferValue(e.target.value)}
+                                    fullWidth
+                                />
+                            </Grid>
+
+                            <Grid item xs={12} sm={4}>
+                                <TextField
+                                    label="Valid Till"
+                                    type="date"
+                                    value={offerValidTill}
+                                    onChange={(e) => setOfferValidTill(e.target.value)}
+                                    InputLabelProps={{ shrink: true }}
+                                    inputProps={{
+                                        min: new Date().toISOString().split("T")[0],
+                                    }}
+                                    fullWidth
+                                />
+                            </Grid>
+                        </Grid>
+
+                        {/* Submit Offer */}
+                        <Box mt={3}>
+                            <Button
+                                variant="contained"
+                                onClick={async () => {
+                                    try {
+                                        const payload = {
+                                            targetType: offerTargetType,
+                                            offerType,
+                                            offerValue,
+                                            validTill: offerValidTill,
+                                            targetIds:
+                                                applyToAll && offerTargetType === "product"
+                                                    ? "all"
+                                                    : selectedTargetIds,
+                                        };
+
+                                        const response = await axios.post(`${baseurl}/api/create`, payload);
+                                        fetchOffers();
+                                        alert("✅ Offer created successfully");
+
+                                        // Reset form
+                                        setSelectedTargetIds([]);
+                                        setApplyToAll(false);
+                                        setOfferType("percentage");
+                                        setOfferValue("");
+                                        setOfferValidTill("");
+                                    } catch (err) {
+                                        const backendMessage =
+                                            err?.response?.data?.message ||
+                                            err?.message ||
+                                            "Something went wrong while creating the offer.";
+                                        alert(backendMessage);
+                                    }
+                                }}
+                            >
+                                Create Offer
+                            </Button>
+                        </Box>
+
+                        {/* Dialog */}
+                        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+                            <DialogTitle>Offer Already Running</DialogTitle>
+                            <DialogContent>
+                                <DialogContentText>{dialogMessage}</DialogContentText>
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={() => setDialogOpen(false)} autoFocus>
+                                    OK
+                                </Button>
+                            </DialogActions>
+                        </Dialog>
+
+                        {/* All Offers Table */}
+                        <Box mt={5}>
+                            <Typography variant="h6" gutterBottom>
+                                All Offers
+                            </Typography>
+
+                            <TableContainer component={Paper}>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Target Type</TableCell>
+                                            <TableCell>Target Names</TableCell>
+                                            <TableCell>Offer Type</TableCell>
+                                            <TableCell>Offer Value</TableCell>
+                                            <TableCell>Valid Till</TableCell>
+                                            <TableCell>Actions</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {offers.map((offer) => (
+                                            <TableRow key={offer._id}>
+                                                <TableCell>{offer.targetType}</TableCell>
+                                                <TableCell>
+                                                    {(offer.targetNames || []).length > 0
+                                                        ? offer.targetNames.join(", ")
+                                                        : "N/A"}
+                                                </TableCell>
+                                                <TableCell>{offer.offerType}</TableCell>
+                                                <TableCell>
+                                                    {offer.offerType === "percentage"
+                                                        ? `${offer.offerValue}%`
+                                                        : `₹${offer.offerValue}`}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {new Date(offer.validTill).toLocaleDateString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="error"
+                                                        size="small"
+                                                        onClick={async () => {
+                                                            if (window.confirm("Are you sure you want to delete this offer?")) {
+                                                                try {
+                                                                    await axios.delete(`${baseurl}/api/delete/${offer._id}`);
+                                                                    fetchOffers();
+                                                                } catch (err) {
+                                                                    console.error("Delete failed:", err);
+                                                                    alert("Failed to delete offer");
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Box>
+                    </Box>
+                )}
 
             </Box>
         </Box>

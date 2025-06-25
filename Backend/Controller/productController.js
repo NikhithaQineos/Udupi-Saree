@@ -12,12 +12,7 @@ export const createproduct = async (req, res) => {
       productcolor,
       productfabric,
       productprice,
-      offerpercentage,
-      validTill,
     } = req.body;
-    if (validTill && new Date(validTill) < new Date().setHours(0, 0, 0, 0)) {
-      return res.status(400).json({ message: "validTill must be today or a future date" });
-    }
     // Handle multiple images
     const productimages = req.files ? req.files.map((file) => file.filename) : [];
 
@@ -31,10 +26,6 @@ export const createproduct = async (req, res) => {
       productcolor,
       productfabric,
       productimages, // Array of image filenames
-      offer: {
-        offerpercentage: offerpercentage ? Number(offerpercentage) : null,
-        validTill: validTill ? new Date(validTill) : null,
-      },
     });
 
     await newproduct.save();
@@ -46,17 +37,9 @@ export const createproduct = async (req, res) => {
   }
 };
 
-const removeExpiredOffers = async () => {
-  const today = new Date().setHours(0, 0, 0, 0);
-  await product.updateMany(
-    { "offer.validTill": { $lt: today } },
-    { $unset: { offer: "" } }
-  );
-};
 
 export const getproduct = async (req, res) => {
   try {
-      await removeExpiredOffers();
       const { query } = req.query;
       let filter = {};
       if (query) {
@@ -95,11 +78,8 @@ export const getproductbycatid = async (req,res)=>{
 export const updateproduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { cat_id, productname, productdescription, productprice, productquantity, productgst,productfabric,productcolor, offerpercentage, validTill, } = req.body;
+    const { cat_id, productname, productdescription, productprice, productquantity, productgst,productfabric,productcolor} = req.body;
     const existingProduct = await product.findById(id);
-    if (validTill && new Date(validTill) < new Date().setHours(0, 0, 0, 0)) {
-      return res.status(400).json({ message: "validTill must be today or a future date" });
-    }
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -115,12 +95,6 @@ export const updateproduct = async (req, res) => {
     // Handle multiple images
     if (req.files && req.files.length > 0) {
       existingProduct.productimages = req.files.map(file => file.filename);
-    }
-    if (offerpercentage || validTill) {
-      existingProduct.offer = {
-        offerpercentage: offerpercentage ? Number(offerpercentage) : null,
-        validTill: validTill ? new Date(validTill) : null,
-      };
     }
     await existingProduct.save();
     res.status(200).json({ message: "Product updated", product: existingProduct });

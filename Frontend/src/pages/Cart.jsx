@@ -73,7 +73,7 @@ const Cart = () => {
         {cartItems.length === 0 ? (
           <p className="empty-cart-message">🛒 Your cart is empty.</p>
         ) : (
-          cartItems.map(({ id, image, name, price, originalPrice, quantity, gst, productgst,maxQty  }) => {
+          cartItems.map(({ id, image, name, price, originalPrice, quantity, gst, productgst, maxQty }) => {
             const gstRate = gst || productgst || 0;
             const gstAmount = (price * quantity * gstRate) / 100;
 
@@ -86,7 +86,14 @@ const Cart = () => {
                     <span className="discounted-price">₹{(price * quantity).toFixed(2)}</span>
                     <span className="original-price">₹{(originalPrice * quantity).toFixed(2)}</span>
                     <span className="discount">
-                      {totals.discounts[id]}% Off
+                      {(() => {
+                        const offer = cartItems.find(i => i.id === id)?.offer;
+                        if (!offer) return null;
+
+                        return offer.offerType === "rupees"
+                          ? `₹${offer.offerValue.toFixed(2)} Off`
+                          : `${offer.offerValue}% Off`;
+                      })()}
                     </span>
                   </p>
 

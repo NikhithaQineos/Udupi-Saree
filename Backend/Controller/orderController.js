@@ -24,10 +24,13 @@ export const createOrder = async (req, res) => {
       productprice: item.productprice,
       productgst: item.productgst,
       productquantity: item.productquantity,
-      offer: {
-        offerpercentage: item.offer?.offerpercentage ?? null,
-        validTill: item.offer?.validTill ?? null,
-      },
+      offer: item.offer
+        ? {
+          offerType: item.offer.offerType ?? null,
+          offerValue: item.offer.offerValue ?? null,
+          validTill: item.offer.validTill ?? null,
+        }
+        : null,
     }));
 
     const newOrder = new order({

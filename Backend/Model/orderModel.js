@@ -58,10 +58,10 @@ const orderSchema = new mongoose.Schema(
                 productgst:{type:String,required:true},
                 productquantity:{type:Number,required:true},
                 offer: {
-                   offerpercentage: { type: Number, default: null },
-                   validTill: { type: Date, default: null }
+                    offerType: { type: String, enum: ["percentage", "rupees"], default: null },
+                    offerValue: { type: Number, default: null },
+                    validTill: { type: Date, default: null }
                 },
-
             }
         ]
 },

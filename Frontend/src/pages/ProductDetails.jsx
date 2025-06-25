@@ -6,12 +6,15 @@ import "./ProductDetails.css";
 import { CartContext } from "../../context/cartContext";
 import { WishlistContext } from "../../context/wishlistContext";
 
+
 const ProductDetails = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [mainImage, setMainImage] = useState("");
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [productOffer, setProductOffer] = useState(null);
+  const [offers, setOffers] = useState([]);
 
   const baseurl = import.meta.env.VITE_API_BASE_URL;
   const user = JSON.parse(localStorage.getItem("user"));
@@ -27,6 +30,7 @@ const ProductDetails = () => {
         const res = await axios.get(`${baseurl}/api/getproductbyid/${id}`);
         const fetchedProduct = res.data.products;
         setProduct(fetchedProduct);
+        fetchOffer(fetchedProduct._id, fetchedProduct.cat_id);
 
         if (fetchedProduct.productimages?.length > 0) {
           setMainImage(`${baseurl}/uploads/${fetchedProduct.productimages[0]}`);
@@ -51,29 +55,58 @@ const ProductDetails = () => {
       }
     };
 
+    const fetchOffer = async (productId, categoryId) => {
+      try {
+        const res = await axios.get(`${baseurl}/api/list`);
+        const allOffers = res.data.offers || [];
+
+        setOffers(allOffers); // Store all offers for getOfferForProduct()
+
+        const validOffers = allOffers.filter((offer) =>
+          (offer.targetType === "product" && offer.targetIds.includes(productId)) ||
+          (offer.targetType === "category" && offer.targetIds.includes(categoryId))
+        );
+
+        if (validOffers.length > 0) {
+          setProductOffer(validOffers[0]); // still used for display
+        }
+      } catch (error) {
+        console.error("Error fetching offers:", error);
+      }
+    };
+
     fetchProduct();
     fetchWishlist();
   }, [id, user?._id]);
 
-  if (loading) return <p>Loading product details...</p>;
-  if (!product) return <p>Product not found.</p>;
+  const isLowStock = product?.productquantity < 20;
+  const isOutOfStock = product?.productquantity === 0;
+  const existingItem = cartItems.find(item => item.id === product?._id);
+  const isMaxQuantityReached = existingItem && existingItem.quantity >= product?.productquantity;
 
-  // Logic moved here from inside handleAddToCart
-  const isLowStock = product.productquantity < 20;
-  const isOutOfStock = product.productquantity === 0;
-  const existingItem = cartItems.find(item => item.id === product._id);
-  const isMaxQuantityReached = existingItem && existingItem.quantity >= product.productquantity;
-
-  const discount = product.offer?.offerpercentage || 0;
-  const originalPrice = Number(product.productprice);
-  const discountedPrice = discount
-    ? Number(originalPrice - (originalPrice * discount) / 100)
-    : originalPrice;
+  const getOfferForProduct = (product) => {
+    return offers.find(offer =>
+      (offer.targetType === "product" && offer.targetIds.includes(product._id)) ||
+      (offer.targetType === "category" && offer.targetIds.includes(product.cat_id?.toString()))
+    );
+  };
 
   const handleAddToCart = () => {
     if (!user?._id) {
       alert("Please login to add items to the cart.");
       return;
+    }
+
+    const existingItem = cartItems.find(item => item.id === product._id);
+
+    const offer = getOfferForProduct(product); // use consistent logic
+    const originalPrice = Number(product.productprice);
+    let discountedPrice = originalPrice;
+
+    if (offer?.offerType === "percentage") {
+      discountedPrice -= (originalPrice * offer.offerValue) / 100;
+    } else if (offer?.offerType === "rupees") {
+      discountedPrice -= offer.offerValue;
     }
 
     const newItem = {
@@ -86,7 +119,7 @@ const ProductDetails = () => {
       originalPrice: originalPrice,
       quantity: 1,
       productgst: product.productgst,
-      offer: product.offer || null,
+      offer: offer || null,
       maxQty: product.productquantity,
     };
 
@@ -121,6 +154,21 @@ const ProductDetails = () => {
     }
   };
 
+  if (loading) return <p>Loading product details...</p>;
+  if (!product) return <p>Product not found.</p>;
+
+  const discountPercent = productOffer?.offerType === "percentage" ? productOffer.offerValue : 0;
+  const discountRupees = productOffer?.offerType === "rupees" ? productOffer.offerValue : 0;
+
+  const originalPrice = Number(product.productprice);
+  let discountedPrice = originalPrice;
+
+  if (discountPercent) {
+    discountedPrice = originalPrice - (originalPrice * discountPercent) / 100;
+  } else if (discountRupees) {
+    discountedPrice = originalPrice - discountRupees;
+  }
+
   return (
     <div className="product-detail-wrapper">
       <div className="product-detail-left">
@@ -150,11 +198,13 @@ const ProductDetails = () => {
         <p className="product-description">{product.productdescription}</p>
 
         <p className="product-price">
-          {discount > 0 ? (
+          {discountPercent > 0 || discountRupees > 0 ? (
             <>
               <span className="discounted-price">₹{discountedPrice.toFixed(2)}</span>
               <span className="original-price">₹{originalPrice.toFixed(2)}</span>
-              <span className="offer-percent">({discount}% OFF)</span>
+              <span className="offer-percent">
+                ({discountPercent > 0 ? `${discountPercent}% OFF` : `₹${discountRupees} OFF`})
+              </span>
             </>
           ) : (
             <span className="discounted-price">₹{originalPrice.toFixed(2)}</span>

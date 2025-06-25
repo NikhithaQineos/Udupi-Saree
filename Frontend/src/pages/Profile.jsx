@@ -5,6 +5,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toWords } from "number-to-words";
 import { useNavigate } from "react-router-dom";
+import { Typography } from "@mui/material";
 
 const Profile = () => {
     const navigate = useNavigate();
@@ -25,6 +26,33 @@ const Profile = () => {
     const user = JSON.parse(localStorage.getItem("user"));
     const userId = user?._id;
     const baseurl = import.meta.env.VITE_API_BASE_URL;
+    const [offers, setOffers] = useState([]);
+    const baseURL = import.meta.env.VITE_API_BASE_URL;
+
+
+    useEffect(() => {
+        const fetchOffers = async () => {
+            try {
+                const res = await axios.get(`${baseURL}/api/list`);
+                setOffers(res.data.offers || []);
+            } catch (err) {
+                console.error("Error fetching offers", err);
+            }
+        };
+        fetchOffers();
+    }, []);
+
+    const getOfferForProduct = (productId) => {
+        for (let offer of offers) {
+            if (
+                offer.targetType === "product" &&
+                (offer.targetIds.includes(productId) || offer.targetIds === "all")
+            ) {
+                return offer;
+            }
+        }
+        return null;
+    };
 
     useEffect(() => {
         if (selectedTab === "addresses" && userId) fetchAddresses();
@@ -104,7 +132,6 @@ const Profile = () => {
     const handleDownloadInvoice = async (order, index = 1) => {
         const doc = new jsPDF();
 
-        // ======= LOGO (async image loading) =======
         const logoUrl = "images/logo.jpg";
         const getImageAsBase64 = async (url) => {
             const res = await fetch(url);
@@ -119,7 +146,6 @@ const Profile = () => {
         const logoBase64 = await getImageAsBase64(logoUrl);
         doc.addImage(logoBase64, 'JPEG', 15, 10, 30, 30); // x, y, width, height
 
-        // ======= TITLE & ADDRESS =======
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
         doc.text('Udupi Saree', 55, 20);
@@ -127,12 +153,10 @@ const Profile = () => {
         doc.setFont('helvetica', 'normal');
         doc.text('Kalasanka, Udupi Dist, Karnataka - 575001', 55, 26);
 
-        // ======= Invoice Title =======
         doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
         doc.text('TAX INVOICE / BILL OF SUPPLY', 105, 42, { align: 'center' });
 
-        // ======= Invoice Info =======
         const paddedIndex = String(index).padStart(5, '0');
         const shortOrderId = order._id?.slice(-4) || '0000';
         const invoiceNumber = `INV${paddedIndex}${shortOrderId}`;
@@ -146,7 +170,6 @@ const Profile = () => {
         doc.text(`Payment Mode: ${order.paymentMode}`, 200, 58, { align: 'right' });
         doc.text(`Payment ID: ${order.paymentId || 'N/A'}`, 200, 64, { align: 'right' });
 
-        // ======= Billing & Shipping =======
         doc.setFont('helvetica', 'bold');
         doc.text('Bill To:', 20, 76);
         doc.setFont('helvetica', 'normal');
@@ -159,43 +182,51 @@ const Profile = () => {
         doc.text(`${order.shippingAddress?.house}, ${order.shippingAddress?.area}`, 200, 82, { align: 'right' });
         doc.text(`${order.shippingAddress?.landmark || ''}`, 200, 88, { align: 'right' });
 
-        // ======= Table Content =======
         let grandTotal = 0;
         let totalGstAmount = 0;
 
         const rows = order.items.map((item, idx) => {
-            const price = parseFloat(item.productprice) || 0;
+            const price = parseFloat(item.originalPrice || item.productprice) || 0;
             const gst = parseFloat(item.productgst) || 0;
             const qty = parseInt(item.productquantity) || 1;
-            const gstAmt = (price * qty * gst) / 100;
 
-            const validTill = item.offer?.validTill ? new Date(item.offer.validTill) : null;
+            const offer = item.offer || getOfferForProduct(item.productId);
+            const validTill = offer?.validTill ? new Date(offer.validTill) : null;
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             validTill?.setHours(23, 59, 59, 999);
 
-            const offerActive =
-                item.offer?.offerpercentage &&
-                (!validTill || validTill >= today);
-
-            const offerRate = offerActive ? item.offer.offerpercentage : 0;
+            const offerActive = offer?.offerValue && (!validTill || validTill >= today);
+            const offerRate = offerActive ? offer.offerValue : 0;
+            const offerType = offer?.offerType;
             const offerValidTill = offerActive && validTill
                 ? validTill.toLocaleDateString()
                 : '—';
 
-            const discountedPrice = offerRate ? price - (price * offerRate) / 100 : price;
-            const totalItemPrice = discountedPrice * qty;
+            let discountedPrice = price;
+            if (offerActive) {
+                if (offerType === "rupees") {
+                    discountedPrice = price - offerRate;
+                } else if (offerType === "percentage") {
+                    discountedPrice = price - (price * offerRate) / 100;
+                }
+            }
+            const totalOriginalPrice = price * qty;
+            const totalItemPrice = totalOriginalPrice //discountedPrice * qty;
             const gstAmount = (totalItemPrice * gst) / 100;
-
             totalGstAmount += gstAmount;
             grandTotal += totalItemPrice + gstAmount;
 
             return [
                 idx + 1,
                 item.productname,
-                price.toFixed(2),
-                offerRate ? `${offerRate}%` : '—',
+                offerActive
+                    ? offerType === "rupees"
+                        ? `${offerRate}`
+                        : `${offerRate}%`
+                    : '—',
                 offerValidTill,
+                totalOriginalPrice.toFixed(2), // ← original price x qty
                 `${gst}%`,
                 gstAmount.toFixed(2),
                 qty,
@@ -205,7 +236,7 @@ const Profile = () => {
 
         autoTable(doc, {
             startY: 100,
-            head: [['S.No', 'Product', 'Price', 'Offer %', 'Valid Till', 'GST %', 'GST Amt', 'Qty', 'Total']],
+            head: [['S.No', 'Product', 'Offer', 'Valid Till', 'Price(incl. offer)', 'GST %', 'GST Amt', 'Qty', 'Total']],
             body: rows,
             styles: {
                 fontSize: 9,
@@ -218,14 +249,14 @@ const Profile = () => {
                 halign: 'center',
             },
             columnStyles: {
-                0: { cellWidth: 11, halign: 'center' },
+                0: { cellWidth: 12, halign: 'center' },
                 1: { cellWidth: 46 },
-                2: { cellWidth: 19, halign: 'center' },
-                3: { cellWidth: 20, halign: 'center' },
-                4: { cellWidth: 22, halign: 'center' },
+                2: { cellWidth: 16, halign: 'center' },
+                3: { cellWidth: 22, halign: 'center' },
+                4: { cellWidth: 23, halign: 'center' },
                 5: { cellWidth: 16, halign: 'center' },
                 6: { cellWidth: 19, halign: 'center' },
-                7: { cellWidth: 12, halign: 'center' },
+                7: { cellWidth: 11, halign: 'center' },
                 8: { cellWidth: 20, halign: 'center' },
             },
             theme: 'grid',
@@ -234,13 +265,11 @@ const Profile = () => {
 
         const finalY = doc.lastAutoTable.finalY + 8;
 
-        // ======= Summary =======
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.text(`Total GST: ${totalGstAmount.toFixed(2)}`, 190, finalY, { align: 'right' });
         doc.text(`Grand Total: ${grandTotal.toFixed(2)}`, 190, finalY + 8, { align: 'right' });
 
-        // ======= Amount in Words =======
         const amountInWords = toWords(Math.round(grandTotal));
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
@@ -316,16 +345,23 @@ const Profile = () => {
                                             const qty = parseInt(item.productquantity) || 1;
                                             const gstAmount = (price * qty * gstPercent) / 100;
                                             const itemTotal = price * qty + gstAmount;
+                                            const offer = item.offer || getOfferForProduct(item.productId);
 
                                             return (
                                                 <div key={index} className="order-item">
                                                     <p>🛍 <strong>{item.productname}</strong></p>
-                                                    <p>Price: ₹{price.toFixed(2)}</p>
+                                                    <p>Price (incl. Offer): ₹{price.toFixed(2)}</p>
                                                     <p>GST: {gstPercent}% → ₹{gstAmount.toFixed(2)}</p>
                                                     <p>Quantity: {qty}</p>
                                                     <p>Total (incl. GST): ₹{itemTotal.toFixed(2)}</p>
-                                                    {item.offer?.offerpercentage && (
-                                                        <p>Offer: {item.offer.offerpercentage}% valid till {new Date(item.offer.validTill).toLocaleDateString()}</p>
+                                                    {offer && offer.offerValue != null && (
+                                                        <Typography variant="body2">
+                                                            Offer:{" "}
+                                                            {offer.offerType === "percentage"
+                                                                ? `${offer.offerValue}%`
+                                                                : `₹${offer.offerValue}`}{" "}
+                                                            | Valid Till: {new Date(offer.validTill).toLocaleDateString()}
+                                                        </Typography>
                                                     )}
                                                 </div>
                                             );
@@ -420,9 +456,6 @@ const Profile = () => {
                         </div>
                     </div>
                 );
-
-            // case "track":
-            // return <div className="profile-content"><h2>Track My Order</h2></div>;
             default:
                 return <div className="profile-content"><h2>Welcome</h2></div>;
         }
@@ -461,5 +494,3 @@ const Profile = () => {
 };
 
 export default Profile;
-
-

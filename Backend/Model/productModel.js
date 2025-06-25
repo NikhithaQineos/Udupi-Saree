@@ -30,15 +30,11 @@ const productSchema = new mongoose.Schema({
         type: Number, 
         required: true
     },
-    productcolor: {
+        productcolor: {
         type: String, 
     },
         productfabric:{
         type: String,
-    },
-         offer: {
-        offerpercentage: { type: Number, required: false },
-        validTill: { type: Date, default: null }
     }
 },
     {timestamps:true}

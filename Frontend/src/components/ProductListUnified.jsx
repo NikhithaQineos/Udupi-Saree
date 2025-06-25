@@ -23,6 +23,7 @@ const ProductListUnified = () => {
   const [selectedFabric, setSelectedFabric] = useState("");
   const { cartItems, setCartItems } = useContext(CartContext);
   const { wishlistItems, fetchWishlist } = useContext(WishlistContext);
+  const [offers, setOffers] = useState([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -41,8 +42,6 @@ const ProductListUnified = () => {
     fetchProducts();
   }, [catId]);
 
-
-
   const handleAddToCart = (product) => {
     if (!user?._id) {
       alert("Please login to add items to the cart.");
@@ -51,11 +50,13 @@ const ProductListUnified = () => {
 
     const existingItem = cartItems.find(item => item.id === product._id);
 
-    const discount = product.offer?.offerpercentage || 0;
-    const originalPrice = Number(product.productprice);
-    const discountedPrice = discount
-      ? Number(originalPrice - (originalPrice * discount) / 100)
-      : originalPrice;
+    const offer = getOfferForProduct(product);
+    let discountedPrice = Number(product.productprice);
+    if (offer?.offerType === "percentage") {
+      discountedPrice -= (discountedPrice * offer.offerValue) / 100;
+    } else if (offer?.offerType === "rupees") {
+      discountedPrice -= offer.offerValue;
+    }
 
     const newItem = {
       id: product._id,
@@ -64,12 +65,13 @@ const ProductListUnified = () => {
         ? `${baseURL}/uploads/${product.productimages[0]}`
         : "/default-image.png",
       price: discountedPrice,
-      originalPrice: originalPrice,
+      originalPrice: Number(product.productprice),
       quantity: 1,
       productgst: product.productgst,
-      offer: product.offer || null,
+      offer: offer || null,
       maxQty: product.productquantity,
     };
+
 
     if (existingItem) {
       const updatedCart = cartItems.map(item =>
@@ -143,6 +145,25 @@ const ProductListUnified = () => {
     fetchProducts();
   }, [catId, selectedColor, selectedFabric]);
 
+  useEffect(() => {
+    const fetchOffers = async () => {
+      try {
+        const res = await axios.get(`${baseURL}/api/list`);
+        setOffers(res.data.offers || []);
+      } catch (err) {
+        console.error("Error fetching offers", err);
+      }
+    };
+    fetchOffers();
+  }, []);
+
+  const getOfferForProduct = (product) => {
+    return offers.find(offer =>
+      (offer.targetType === "product" && offer.targetIds.includes(product._id)) ||
+      (offer.targetType === "category" && offer.targetIds.includes(product.cat_id?.toString()))
+    );
+  };
+
   return (
     <section className="product-section">
       <h2 className="product-heading">
@@ -182,9 +203,19 @@ const ProductListUnified = () => {
         <div className={`product-grid-wrapper ${isHomePage ? "scrollable" : ""}`}>
           <div className="product-grid">
             {products.map((product) => {
-              const discount = product.offer?.offerpercentage || 0;
+              const offer = getOfferForProduct(product);
               const originalPrice = Number(product.productprice);
-              const discountedPrice = originalPrice - (originalPrice * discount) / 100;
+              let discountedPrice = originalPrice;
+              let discountLabel = "";
+
+              if (offer?.offerType === "percentage") {
+                discountedPrice = originalPrice - (originalPrice * offer.offerValue) / 100;
+                discountLabel = `${offer.offerValue}% OFF`;
+              } else if (offer?.offerType === "rupees") {
+                discountedPrice = originalPrice - offer.offerValue;
+                discountLabel = `₹${offer.offerValue} OFF`;
+              }
+
               const isWishlisted = product && wishlistItems.some(item => item._id === product._id);
               const isLowStock = product.productquantity < 20;
               const existingItem = cartItems.find(item => item.id === product._id);
@@ -211,13 +242,20 @@ const ProductListUnified = () => {
                     />
                     <h3 className="product-name">{product.productname}</h3>
                     <p className="product-price">
-                      {discount ? (
+                      {discountedPrice !== originalPrice ? (
                         <>
-                          <span className="discounted-price">₹{discountedPrice.toFixed(2)}</span>
-                          <span className="original-price">₹{originalPrice.toFixed(2)}</span>
+                          <span className="discounted-price">
+                            ₹{discountedPrice.toFixed(2)}
+                          </span>
+                          <span className="original-price">
+                            ₹{originalPrice.toFixed(2)}
+                          </span>
+                          <span className="offer-percent">({discountLabel})</span>
                         </>
                       ) : (
-                        <span className="discounted-price">₹{originalPrice.toFixed(2)}</span>
+                        <span className="discounted-price">
+                          ₹{originalPrice.toFixed(2)}
+                        </span>
                       )}
                     </p>
                     <div className="product-actions">

@@ -10,16 +10,29 @@ export const createOffer = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    let createdOffers = [];
+    const today = new Date();
 
-    // Special case: apply to all products
+    // Auto-remove expired offers before checking
+    await Offer.deleteMany({ validTill: { $lt: today } });
+
+    // Case: Apply to ALL products
     if (targetType === "product" && targetIds === "all") {
+      const existing = await Offer.findOne({
+        targetType: "product",
+        targetIds: { $size: await product.countDocuments() },
+        validTill: { $gte: today }
+      });
+
+      if (existing) {
+        return res.status(400).json({ message: "An offer is already running for all products" });
+      }
+
       const allProducts = await product.find();
       const allIds = allProducts.map((p) => p._id);
 
       const newOffer = new Offer({
         targetType,
-        targetIds: allIds,  // ✅ Correct field
+        targetIds: allIds,
         offerType,
         offerValue,
         validTill,
@@ -33,19 +46,30 @@ export const createOffer = async (req, res) => {
       });
     }
 
-    // ✅ For multiple selected category/product IDs
+    // ✅ Check for duplicate offers on individual IDs (category or product)
+    const existing = await Offer.findOne({
+      targetType,
+      targetIds: { $in: targetIds },
+      validTill: { $gte: today },
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message:` An offer is already running for one or more selected ${targetType}s.`,
+      });
+    }
+
+    // Create the offer
     const newOffer = new Offer({
       targetType,
-      targetIds: targetIds,  // array of IDs
+      targetIds,
       offerType,
       offerValue,
       validTill,
     });
 
     await newOffer.save();
-    createdOffers.push(newOffer);
-
-    res.status(201).json({ success: true, offers: createdOffers });
+    res.status(201).json({ success: true, offers: [newOffer] });
   } catch (err) {
     console.error("Offer creation failed:", err);
     res.status(500).json({ message: "Server error during offer creation" });
@@ -53,8 +77,44 @@ export const createOffer = async (req, res) => {
 };
 
 
+
+// export const getOffers = async (req, res) => {
+//   try {
+//     const offers = await Offer.find();
+
+//     const enrichedOffers = await Promise.all(
+//       offers.map(async (offer) => {
+//         let targetNames = [];
+
+//         if (offer.targetType === "product") {
+//           const productsList = await product.find({ _id: { $in: offer.targetIds } });
+//           targetNames = productsList.map((p) => p.productname);
+//         } else if (offer.targetType === "category") {
+//           const categoriesList = await category.find({ _id: { $in: offer.targetIds } });
+//           targetNames = categoriesList.map((c) => c.catname);
+//         }
+
+//         return {
+//           ...offer._doc,
+//           targetNames,
+//         };
+//       })
+//     );
+
+//     res.status(200).json({ success: true, offers: enrichedOffers });
+//   } catch (error) {
+//     console.error("Error fetching offers:", error);
+//     res.status(500).json({ success: false, message: "Error fetching offers" });
+//   }
+// };
+
 export const getOffers = async (req, res) => {
   try {
+    const today = new Date();
+
+    // Auto-delete expired offers
+    await Offer.deleteMany({ validTill: { $lt: today } });
+
     const offers = await Offer.find();
 
     const enrichedOffers = await Promise.all(
@@ -83,13 +143,22 @@ export const getOffers = async (req, res) => {
   }
 };
 
-
 export const deleteOffer = async (req, res) => {
   try {
     const { id } = req.params;
-    await Offer.findByIdAndDelete(id);
+    console.log("➡️ Delete request received for ID:", id);
+
+    const deleted = await Offer.findByIdAndDelete(id);
+
+    if (!deleted) {
+      console.log("❌ Offer not found with ID:", id);
+      return res.status(404).json({ success: false, message: "Offer not found" });
+    }
+
+    console.log("✅ Offer deleted:", deleted._id);
     res.status(200).json({ success: true, message: "Offer deleted" });
   } catch (err) {
+    console.error("🔥 Delete error:", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };

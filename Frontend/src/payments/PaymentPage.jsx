@@ -29,8 +29,7 @@ const PaymentPage = () => {
   const user = JSON.parse(localStorage.getItem("user"));
   const baseurl = import.meta.env.VITE_API_BASE_URL;
   const navigate = useNavigate();
-  const {clearCart} = useContext(CartContext);
-
+  const { clearCart } = useContext(CartContext);
 
   const [cartItems, setCartItems] = useState(() => {
     const storedCart = localStorage.getItem("cartItems");
@@ -43,10 +42,8 @@ const PaymentPage = () => {
       const originalPrice = item.originalPrice || 0;
       const quantity = item.quantity || 1;
       const gstRate = item.gst || item.productgst || 0;
-
       const discount = (originalPrice - price) * quantity;
       const gstAmount = (price * quantity * gstRate) / 100;
-
       acc.totalPrice += price * quantity;
       acc.totalDiscount += discount;
       acc.totalGST += gstAmount;
@@ -58,8 +55,7 @@ const PaymentPage = () => {
   // const platformFee = 3;
   const deliveryCharge = totals.totalPrice > 500 ? 0 : 30;
 
-  const finalAmount =
-    totals.totalPrice + totals.totalGST + deliveryCharge;
+  const finalAmount = totals.totalPrice + totals.totalGST + deliveryCharge;
 
   const fetchAddresses = async () => {
     try {
@@ -189,16 +185,16 @@ const PaymentPage = () => {
         productprice: String(item.price),
         productgst: String(item.productgst || 0),
         productquantity: String(item.quantity || 1),
-        offer: {
-          offerpercentage: item.offer?.offerpercentage ?? null,
-          validTill: item.offer?.validTill ?? null,
-        },
+        offer: item.offer
+          ? {
+            offerType: item.offer.offerType || null,
+            offerValue: item.offer.offerValue || null,
+            validTill: item.offer.validTill || null,
+          }
+          : null,
       })),
     };
     console.log("Sending orderData:", orderData);
-    
-
-    
 
     if (paymentMethod === "cash on delivery") {
       try {
