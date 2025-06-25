@@ -14,7 +14,8 @@ import { dirname } from "path";
 import userRouter from "./Router/userRouter.js"
 import cors from "cors";
 import razorpayrouter from "./Router/razorpayRouter.js";
-
+import offerRouter from "./Router/offerRoter.js"
+import Razorpay from "razorpay";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -22,7 +23,6 @@ const __dirname = dirname(__filename);
 const app = express();
 dotenv.config();
 
-import Razorpay from "razorpay";
 app.use(cors());
 app.use(express.json()); // very important to parse incoming JSON
 
@@ -44,3 +44,4 @@ app.use("/api",contactusRouter);
 app.use("/api",orderRouter);
 app.use("/api",wishlistRouter);
 app.use("/api",razorpayrouter);
+app.use("/api",offerRouter);
