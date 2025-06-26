@@ -420,7 +420,7 @@ const Profile = () => {
                                             <label>Landmark</label>
                                             <input name="landmark" value={formData.landmark} onChange={handleChange} placeholder="Landmark" />
 
-                                            <label>Alternate Phone</label>
+                                            <label>Phone</label>
                                             <input name="alternatePhone" value={formData.alternatePhone} onChange={handleChange} placeholder="Alt Phone" />
 
                                             <div style={{ marginTop: '10px' }}>
