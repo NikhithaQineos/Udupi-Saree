@@ -87,6 +87,18 @@
 .product-price {
   font-size: 0.95rem;
   margin-bottom: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+}
+.offer-percent {
+  color: var(--price-discount);
+  font-weight: bold;
+  font-size: 0.85rem;
 }
 
 .discounted-price {
