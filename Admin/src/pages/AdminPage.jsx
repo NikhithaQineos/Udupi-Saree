@@ -152,6 +152,7 @@ export default function AdminPanel() {
     const [productfabric, setProductFabric] = useState("");
     const [catId, setCatId] = useState("");
     const [offerpercentage, setOfferPercentage] = useState("");
+    const [validFrom, setValidFrom] = useState("");
     const [validTill, setValidTill] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
     const [isEditingProduct, setIsEditingProduct] = useState(false);
@@ -208,6 +209,11 @@ export default function AdminPanel() {
         setProductFabric(product.productfabric);
 
         // Fixed: use correct variable name
+
+        setOfferPercentage(product.offer?.offerpercentage || "");
+        setValidFrom(product.offer?.validFrom ? product.offer.validFrom.split("T")[0] : "");
+
+
         setOfferPercentage(product.offer?.offerpercentage || "");
         setValidTill(product.offer?.validTill ? product.offer.validTill.split("T")[0] : "");
 
@@ -264,7 +270,8 @@ export default function AdminPanel() {
         formData.append("productcolor", productcolor);
         formData.append("productfabric", productfabric);
         formData.append("offerpercentage", offerpercentage);
-        if (validTill) formData.append("validTill", validTill);
+        if (validFrom) formData.append("validFrom", new Date(validFrom).toISOString());
+        if (validTill) formData.append("validTill", new Date(validTill).toISOString());
         formData.append("cat_id", catId);
 
         if (productimage && productimage.length > 0) {
@@ -395,7 +402,9 @@ export default function AdminPanel() {
 
         if (
             product.offer &&
+            product.offer.validFrom &&
             product.offer.validTill &&
+            new Date(product.offer.validFrom) <= today &&
             new Date(product.offer.validTill) >= today
         ) {
             price -=
@@ -407,13 +416,17 @@ export default function AdminPanel() {
         // 2. Offer model-level category/product offer
         const applicableOffer = offers.find((offer) => {
             return (
+                offer.validFrom &&
                 offer.validTill &&
+                new Date(offer.validFrom) <= today &&
                 new Date(offer.validTill) >= today &&
-                ((offer.targetType === "product" && offer.targetId === product._id) ||
-                    (offer.targetType === "category" &&
-                        offer.targetId === product.cat_id?._id))
+                (
+                    (offer.targetType === "product" && offer.targetId === product._id) ||
+                    (offer.targetType === "category" && offer.targetId === product.cat_id?._id)
+                )
             );
         });
+
 
         if (applicableOffer) {
             if (applicableOffer.offerType === "percentage") {
@@ -425,99 +438,6 @@ export default function AdminPanel() {
 
         return price.toFixed(2);
     };
-
-
-
-
-    // const handleTargetChange = async (e, id) => {
-    //     if (e.target.checked) {
-    //         try {
-    //             const today = new Date();
-    //             const offersRes = await axios.get(`${baseurl}/api/list`);
-    //             const activeOffers = offersRes.data.offers || [];
-
-    //             if (offerTargetType === "category") {
-    //                 const isCategoryOffered = activeOffers.some(
-    //                     (offer) =>
-    //                         offer.targetType === "category" &&
-    //                         new Date(offer.validTill) >= today &&
-    //                         offer.targetIds?.includes(id)
-    //                 );
-
-    //                 const productRes = await axios.get(`${baseurl}/api/getproductbycatid/${id}`);
-    //                 const productsInCategory = productRes.data.products || [];
-
-    //                 const anyProductHasOffer = productsInCategory.some((product) =>
-    //                     activeOffers.some(
-    //                         (offer) =>
-    //                             offer.targetType === "product" &&
-    //                             new Date(offer.validTill) >= today &&
-    //                             (offer.targetIds?.includes(product._id) || offer.targetIds === "all")
-    //                     )
-    //                 );
-
-    //                 if (isCategoryOffered) {
-    //                     setDialogMessage("An offer is already running directly on this category.");
-    //                     setDialogOpen(true);
-    //                     return; // ❌ Don't add to selection
-    //                 }
-
-    //                 if (anyProductHasOffer) {
-    //                     setDialogMessage("One or more products under this category already have an active offer.");
-    //                     setDialogOpen(true);
-    //                     return; // ❌ Don't add to selection
-    //                 }
-
-    //                 // ✅ Safe to select
-    //                 setSelectedTargetIds([...selectedTargetIds, id]);
-    //             }
-
-    //             if (offerTargetType === "product") {
-    //                 // 1. Check if this product already has a direct offer
-    //                 const isAlreadyOffered = activeOffers.some(
-    //                     (offer) =>
-    //                         offer.targetType === "product" &&
-    //                         new Date(offer.validTill) >= today &&
-    //                         (offer.targetIds?.includes(id) || offer.targetIds === "all")
-    //                 );
-
-    //                 if (isAlreadyOffered) {
-    //                     setDialogMessage("An offer is already running for this product.");
-    //                     setDialogOpen(true);
-    //                     return;
-    //                 }
-
-    //                 // 2. ✅ Check if this product's category has an offer
-    //                 const productRes = await axios.get(`${baseurl}/api/getproductbyid/${id}`);
-    //                 const productData = productRes.data.products; // assuming .products is single object
-    //                 const categoryId = productData.cat_id;
-
-    //                 const isCategoryOffered = activeOffers.some(
-    //                     (offer) =>
-    //                         offer.targetType === "category" &&
-    //                         new Date(offer.validTill) >= today &&
-    //                         offer.targetIds?.includes(categoryId)
-    //                 );
-
-    //                 if (isCategoryOffered) {
-    //                     setDialogMessage("This product's category already has an active offer.");
-    //                     setDialogOpen(true);
-    //                     return;
-    //                 }
-
-    //                 // ✅ Safe to select
-    //                 setSelectedTargetIds([...selectedTargetIds, id]);
-    //             }
-
-    //         } catch (error) {
-    //             console.error("Error during offer check:", error);
-    //         }
-    //     } else {
-    //         // ✅ Unselect
-    //         setSelectedTargetIds(selectedTargetIds.filter((tid) => tid !== id));
-    //     }
-    // };
-
 
     const handleTargetChange = async (e, id) => {
         const isChecked = e.target.checked;
@@ -593,7 +513,7 @@ export default function AdminPanel() {
                     }
 
                     if (isCategoryOffered) {
-                        setDialogMessage("❌ The category of this product already has an active offer.");
+                        setDialogMessage(" The category of this product already has an active offer.");
                         setDialogOpen(true);
                         return;
                     }
@@ -607,6 +527,11 @@ export default function AdminPanel() {
             console.error("Error during offer check:", error);
         }
     };
+
+    useEffect(() => {
+        setValidFrom(new Date().toISOString().split("T")[0]);
+    }, []);
+
 
     return (
         <Box sx={{ display: "flex", minHeight: "100vh" }}>
@@ -1098,6 +1023,22 @@ export default function AdminPanel() {
                             />
 
                             <TextField
+                                label="Valid From"
+                                type="date"
+                                value={validFrom}
+                                onChange={(e) => {
+                                    console.log("validFrom input:", e.target.value);
+                                    setValidFrom(e.target.value);
+                                }}
+                                fullWidth
+                                InputLabelProps={{ shrink: true }}
+                                inputProps={{
+                                    min: new Date().toISOString().split("T")[0],
+                                }}
+                            />
+
+
+                            <TextField
                                 fullWidth
                                 type="date"
                                 label="Valid Till"
@@ -1379,14 +1320,6 @@ export default function AdminPanel() {
                                         <TableCell>{user.email}</TableCell>
                                         <TableCell>{user.phone}</TableCell>
                                         <TableCell>{new Date(user.createdAt).toLocaleString()}</TableCell>
-                                        <TableCell>
-                                            {/* <IconButton
-                                                onClick={() => handleDeleteUser(user._id)}
-                                                color="error"
-                                            >
-                                                <DeleteIcon /> */}
-                                            {/* </IconButton> */}
-                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -1624,7 +1557,7 @@ export default function AdminPanel() {
                                                     }
 
                                                     if (validCategoryIds.length === 0) {
-                                                        setDialogMessage("❌ All categories or their products already have active offers.");
+                                                        setDialogMessage(" All categories or their products already have active offers.");
                                                         setDialogOpen(true);
                                                         return;
                                                     }
@@ -1668,9 +1601,6 @@ export default function AdminPanel() {
                                 </Box>
                             </Box>
                         )}
-
-
-
                         {/* Product Selection */}
                         {offerTargetType === "product" && (
                             <Box mt={2}>
@@ -1683,7 +1613,7 @@ export default function AdminPanel() {
                                     control={
                                         <Checkbox
                                             checked={selectAllProducts}
-                                            
+
                                             onChange={async (e) => {
                                                 const isChecked = e.target.checked;
                                                 const today = new Date();
@@ -1714,7 +1644,7 @@ export default function AdminPanel() {
                                                     }
 
                                                     if (validProductIds.length === 0) {
-                                                        setDialogMessage("❌ All products or their categories already have active offers.");
+                                                        setDialogMessage(" All products or their categories already have active offers.");
                                                         setDialogOpen(true);
                                                         return;
                                                     }
@@ -1736,7 +1666,7 @@ export default function AdminPanel() {
                                 <Box mt={2} maxHeight="200px" overflow="auto" border={1} borderColor="#ddd" p={2} borderRadius={2}>
                                     <FormGroup>
                                         {products.map((prod) => (
-                    
+
                                             <FormControlLabel
                                                 key={prod._id}
                                                 control={
@@ -1782,6 +1712,19 @@ export default function AdminPanel() {
                             </Grid>
 
                             <Grid item xs={12} sm={4}>
+
+                                <TextField
+                                    label="Valid From"
+                                    type="date"
+                                    value={validFrom}
+                                    onChange={(e) => setValidFrom(e.target.value)}
+                                    fullWidth
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{ mb: 2 }}
+                                />
+
+
+
                                 <TextField
                                     label="Valid Till"
                                     type="date"
@@ -1805,14 +1748,15 @@ export default function AdminPanel() {
                                         const payload = {
                                             targetType: offerTargetType,
                                             offerType,
-                                            offerValue,
-                                            validTill: offerValidTill,
+                                            offerValue: Number(offerValue),
+                                            validFrom: new Date(validFrom).toISOString(),
+                                            validTill: new Date(offerValidTill).toISOString(),  // ✅ FIXED HERE
                                             targetIds: selectedTargetIds,
                                         };
 
                                         const response = await axios.post(`${baseurl}/api/create`, payload);
                                         fetchOffers();
-                                        alert("✅ Offer created successfully");
+                                        alert(" Offer created successfully");
 
                                         // Reset form
                                         setSelectedTargetIds([]);
@@ -1862,6 +1806,7 @@ export default function AdminPanel() {
                                             <TableCell>Target Names</TableCell>
                                             <TableCell>Offer Type</TableCell>
                                             <TableCell>Offer Value</TableCell>
+                                            <TableCell>Valid From</TableCell>
                                             <TableCell>Valid Till</TableCell>
                                             <TableCell>Actions</TableCell>
                                         </TableRow>
@@ -1880,6 +1825,9 @@ export default function AdminPanel() {
                                                     {offer.offerType === "percentage"
                                                         ? `${offer.offerValue}%`
                                                         : `₹${offer.offerValue}`}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {new Date(offer.validFrom).toLocaleDateString("en-GB")}
                                                 </TableCell>
                                                 <TableCell>
                                                     {new Date(offer.validTill).toLocaleDateString()}
@@ -1912,7 +1860,6 @@ export default function AdminPanel() {
                         </Box>
                     </Box>
                 )}
-
             </Box>
         </Box>
     );

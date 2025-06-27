@@ -4,11 +4,16 @@ import { product } from "../Model/productModel.js";
 
 export const createOffer = async (req, res) => {
   try {
-    const { targetType, targetIds, offerType, offerValue, validTill } = req.body;
+    const { targetType, targetIds, offerType, offerValue, validFrom, validTill } = req.body;
 
-    if (!targetType || !offerType || !offerValue || !validTill || !targetIds || targetIds.length === 0) {
+    if (!targetType || !offerType || !offerValue || !validFrom || !validTill || !targetIds || targetIds.length === 0) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    if (new Date(validFrom) > new Date(validTill)) {
+      return res.status(400).json({ message: "Valid From date must be before Valid Till date." });
+    }
+
 
     const today = new Date();
 
@@ -19,8 +24,12 @@ export const createOffer = async (req, res) => {
     const existing = await Offer.findOne({
       targetType,
       targetIds: { $in: targetIds },
-      validTill: { $gte: today },
+      $and: [
+        { validFrom: { $lte: new Date(validTill) } },
+        { validTill: { $gte: new Date(validFrom) } },
+      ],
     });
+
 
     if (existing) {
       return res.status(400).json({
@@ -33,8 +42,13 @@ export const createOffer = async (req, res) => {
       targetIds,
       offerType,
       offerValue,
-      validTill,
+      validFrom: new Date(validFrom),
+      validTill: new Date(validTill),
     });
+
+    if (isNaN(new Date(validFrom)) || isNaN(new Date(validTill))) {
+      return res.status(400).json({ message: "Invalid date format" });
+    }
 
     await newOffer.save();
     res.status(201).json({ success: true, offers: [newOffer] });
@@ -47,13 +61,7 @@ export const createOffer = async (req, res) => {
 
 export const getOffers = async (req, res) => {
   try {
-    const today = new Date();
-
-    // Auto-delete expired offers
-    await Offer.deleteMany({ validTill: { $lt: today } });
-
-    const offers = await Offer.find({ validTill: { $gte: today } });
-
+    const offers = await Offer.find(); // 🔁 fetch ALL offers
     const enrichedOffers = await Promise.all(
       offers.map(async (offer) => {
         let targetNames = [];
@@ -79,6 +87,7 @@ export const getOffers = async (req, res) => {
     res.status(500).json({ success: false, message: "Error fetching offers" });
   }
 };
+
 
 
 export const deleteOffer = async (req, res) => {

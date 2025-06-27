@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const offerSchema = new mongoose.Schema({
   targetType: {
     type: String,
-    enum: ['category', 'product'], // target type
+    enum: ['category', 'product'],
     required: true,
   },
   targetIds: [{
@@ -20,6 +20,11 @@ const offerSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+    validFrom: {
+    type: Date,
+    required: true,
+  },
+  
   validTill: {
     type: Date,
     required: true,
