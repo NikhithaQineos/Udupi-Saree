@@ -18,8 +18,11 @@ import {
     Select,
     InputLabel,
     FormControl,
-    useTheme,
+    AppBar,
+    Toolbar,
     Divider,
+    useMediaQuery,
+    useTheme,
     Stack
 } from "@mui/material";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton } from "@mui/material";
@@ -35,6 +38,7 @@ import {
     DialogContentText,
     DialogActions
 } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 
 const fabricOptions = ["Silk", "Cotton", "Linen", "Georgette", "Chiffon", "Velvet", "Net", "Organza"];
 
@@ -61,6 +65,11 @@ export default function AdminPanel() {
     const [selectedTargetIds, setSelectedTargetIds] = useState([]);
     const [selectAllProducts, setSelectAllProducts] = useState(false);
     const [selectAllCategories, setSelectAllCategories] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+    const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
     useEffect(() => {
         if (offerTargetType === "category") {
@@ -77,9 +86,6 @@ export default function AdminPanel() {
             setSelectAllProducts(allSelected);
         }
     }, [selectedTargetIds, products, offerTargetType]);
-
-
-
 
     const [fromDate, setFromDate] = useState("");
     const [toDate, setToDate] = useState("");
@@ -257,7 +263,6 @@ export default function AdminPanel() {
         }
     };
 
-
     const handleProductSubmit = async (e) => {
         e.preventDefault();
 
@@ -330,7 +335,6 @@ export default function AdminPanel() {
     };
 
     //FETCH CONTACT US FROM QUERY FROM USER//
-
     const fetchContactMessages = async () => {
         try {
             const res = await axios.get(`${baseurl}/api/getMessege`);
@@ -350,7 +354,6 @@ export default function AdminPanel() {
             console.error("Failed to delete contact message", err);
         }
     };
-
 
     //FETCH  USER DETAILS FROM  FROM USER
     const fetchUsers = async () => {
@@ -395,7 +398,6 @@ export default function AdminPanel() {
         }
     };
 
-
     const getEffectivePrice = (product) => {
         let price = product.productprice;
         const today = new Date();
@@ -427,7 +429,6 @@ export default function AdminPanel() {
             );
         });
 
-
         if (applicableOffer) {
             if (applicableOffer.offerType === "percentage") {
                 price -= price * (applicableOffer.offerValue / 100);
@@ -435,7 +436,6 @@ export default function AdminPanel() {
                 price -= applicableOffer.offerValue;
             }
         }
-
         return price.toFixed(2);
     };
 
@@ -454,10 +454,8 @@ export default function AdminPanel() {
                         new Date(offer.validTill) >= today &&
                         offer.targetIds.includes(id)
                 );
-
                 const productRes = await axios.get(`${baseurl}/api/getproductbycatid/${id}`);
                 const productsInCategory = productRes.data.products || [];
-
                 const anyProductHasOffer = productsInCategory.some((product) =>
                     activeOffers.some(
                         (offer) =>
@@ -469,13 +467,13 @@ export default function AdminPanel() {
 
                 if (isChecked) {
                     if (isCategoryOffered) {
-                        setDialogMessage("❌ This category already has an active offer.");
+                        setDialogMessage("This category already has an active offer.");
                         setDialogOpen(true);
                         return;
                     }
 
                     if (anyProductHasOffer) {
-                        setDialogMessage("❌ A product under this category already has an active offer.");
+                        setDialogMessage("A product under this category already has an active offer.");
                         setDialogOpen(true);
                         return;
                     }
@@ -507,13 +505,13 @@ export default function AdminPanel() {
 
                 if (isChecked) {
                     if (isProductOffered) {
-                        setDialogMessage("❌ This product already has an active offer.");
+                        setDialogMessage("This product already has an active offer.");
                         setDialogOpen(true);
                         return;
                     }
 
                     if (isCategoryOffered) {
-                        setDialogMessage(" The category of this product already has an active offer.");
+                        setDialogMessage("The category of this product already has an active offer.");
                         setDialogOpen(true);
                         return;
                     }
@@ -532,136 +530,122 @@ export default function AdminPanel() {
         setValidFrom(new Date().toISOString().split("T")[0]);
     }, []);
 
+    const drawerContent = (
+        <Box>
+            <Box sx={{ p: 3, textAlign: "center", fontWeight: "bold", fontSize: 24 }}>
+                Admin Panel
+            </Box>
+            <Divider sx={{ backgroundColor: "rgba(255,255,255,0.3)" }} />
+            <List>
+                {["category", "product", "contact", "users", "orders"].map((section) => (
+                    <ListItem key={section} disablePadding>
+                        <ListItemButton
+                            selected={activeSection === section}
+                            onClick={() => {
+                                setActiveSection(section);
+                                if (isMobile) setMobileOpen(false); // close drawer on mobile after selecting
+                            }}
+                            sx={{
+                                backgroundColor: activeSection === section ? "#b78c6a" : "transparent",
+                                color: activeSection === section ? "#fff" : "inherit",
+                                "&:hover": {
+                                    backgroundColor: "#fff",
+                                    color: "#b78c6a",
+                                    "& .MuiListItemText-root": {
+                                        color: "#b78c6a",
+                                    },
+                                },
+                            }}
+                        >
+                            <ListItemText
+                                primary={{
+                                    category: "Categories",
+                                    product: "Products",
+                                    contact: "User Queries",
+                                    users: "User Details",
+                                    orders: "User Orders",
+                                }[section]}
+                            />
+                        </ListItemButton>
+                    </ListItem>
+                ))}
+                <ListItemButton
+                    selected={activeSection === "offer"}
+                    onClick={() => {
+                        setActiveSection("offer");
+                        if (isMobile) setMobileOpen(false);
+                    }}
+                >
+                    <ListItemText primary="Offer" />
+                </ListItemButton>
+            </List>
+        </Box>
+    );
 
     return (
         <Box sx={{ display: "flex", minHeight: "100vh" }}>
-            <Drawer
-                variant="permanent"
-                anchor="left"
-                sx={{
-                    width: drawerWidth,
-                    flexShrink: 0,
-                    "& .MuiDrawer-paper": {
+            {/* AppBar with menu icon on mobile */}
+            {isMobile && (
+                <AppBar
+                    position="fixed"
+                    sx={{
+                        width: "100%",
+                        bgcolor: "#b78c6a",
+                    }}
+                >
+                    <Toolbar>
+                        <IconButton color="inherit" edge="start" onClick={handleDrawerToggle}>
+                            <MenuIcon />
+                        </IconButton>
+                        <Typography variant="h6" sx={{ ml: 2, flexGrow: 1 }}>
+                            Admin Panel
+                        </Typography>
+                    </Toolbar>
+                </AppBar>
+            )}
+
+            {/* Permanent Drawer on desktop */}
+            {!isMobile && (
+                <Drawer
+                    variant="permanent"
+                    anchor="left"
+                    sx={{
                         width: drawerWidth,
-                        boxSizing: "border-box",
-                        background: "#b78c6a",
-                        color: "#fff",
-                    },
-                }}
-            >
-                <Box sx={{ p: 3, textAlign: "center", fontWeight: "bold", fontSize: 24 }}>
-                    Admin Panel
-                </Box>
-                <Divider sx={{ backgroundColor: "rgba(255,255,255,0.3)" }} />
-                <List>
-                    <ListItem disablePadding>
-                        <ListItemButton
-                            selected={activeSection === "category"}
+                        flexShrink: 0,
+                        "& .MuiDrawer-paper": {
+                            width: drawerWidth,
+                            boxSizing: "border-box",
+                            background: "#b78c6a",
+                            color: "#fff",
+                        },
+                    }}
+                >
+                    {drawerContent}
+                </Drawer>
+            )}
 
-                            onClick={() => setActiveSection("category")}
-                            sx={{
-                                backgroundColor: activeSection === "category" ? "#b78c6a" : "transparent",
-                                color: activeSection === "category" ? "#fff" : "inherit",
-                                "&:hover": {
-                                    backgroundColor: "#fff",
-                                    color: "#b78c6a",
-                                    "& .MuiListItemText-root": {
-                                        color: "#b78c6a",
-                                    },
-                                },
-                            }}
-                        >
-                            <ListItemText primary="Categories" />
-                        </ListItemButton>
+            {/* Temporary Drawer on mobile */}
+            {isMobile && (
+                <Drawer
+                    variant="temporary"
+                    anchor="left"
+                    open={mobileOpen}
+                    onClose={handleDrawerToggle}
+                    ModalProps={{ keepMounted: true }} // better mobile performance
+                    sx={{
+                        "& .MuiDrawer-paper": {
+                            width: drawerWidth,
+                            boxSizing: "border-box",
+                            background: "#b78c6a",
+                            color: "#fff",
+                        },
+                    }}
+                >
+                    {drawerContent}
+                </Drawer>
+            )}
 
-                    </ListItem>
-
-                    <ListItem disablePadding>
-                        <ListItemButton
-                            selected={activeSection === "product"}
-                            onClick={() => setActiveSection("product")}
-                            sx={{
-                                backgroundColor: activeSection === "product" ? "#b78c6a" : "transparent",
-                                color: activeSection === "product" ? "#fff" : "inherit",
-                                "&:hover": {
-                                    backgroundColor: "#fff",
-                                    color: "#b78c6a",
-                                    "& .MuiListItemText-root": {
-                                        color: "#b78c6a",
-                                    },
-                                },
-                            }}
-                        >
-                            <ListItemText primary="Products" />
-                        </ListItemButton>
-                    </ListItem>
-
-                    <ListItem disablePadding>
-                        <ListItemButton
-                            selected={activeSection === "contact"}
-                            onClick={() => setActiveSection("contact")}
-                            sx={{
-                                backgroundColor: activeSection === "contact" ? "#b78c6a" : "transparent",
-                                color: activeSection === "contact" ? "#fff" : "inherit",
-                                "&:hover": {
-                                    backgroundColor: "#fff",
-                                    color: "#b78c6a",
-                                    "& .MuiListItemText-root": {
-                                        color: "#b78c6a",
-                                    },
-                                },
-                            }}
-                        >
-                            <ListItemText primary="User Queries" />
-                        </ListItemButton>
-                    </ListItem>
-
-                    <ListItem disablePadding>
-                        <ListItemButton
-                            selected={activeSection === "users"}
-                            onClick={() => setActiveSection("users")}
-                            sx={{
-                                backgroundColor: activeSection === "users" ? "#b78c6a" : "transparent",
-                                color: activeSection === "users" ? "#fff" : "inherit",
-                                "&:hover": {
-                                    backgroundColor: "#fff",
-                                    color: "#b78c6a",
-                                    "& .MuiListItemText-root": {
-                                        color: "#b78c6a",
-                                    },
-                                },
-                            }}
-                        >
-                            <ListItemText primary="User Details" />
-                        </ListItemButton>
-                    </ListItem>
-
-                    <ListItem disablePadding>
-                        <ListItemButton
-                            selected={activeSection === "orders"}
-                            onClick={() => setActiveSection("orders")}
-                            sx={{
-                                backgroundColor: activeSection === "orders" ? "#b78c6a" : "transparent",
-                                color: activeSection === "orders" ? "#fff" : "inherit",
-                                "&:hover": {
-                                    backgroundColor: "#fff",
-                                    color: "#b78c6a",
-                                    "& .MuiListItemText-root": {
-                                        color: "#b78c6a",
-                                    },
-                                },
-                            }}
-                        >
-                            <ListItemText primary="User Orders" />
-                        </ListItemButton>
-                    </ListItem>
-
-                    <ListItemButton onClick={() => setActiveSection("offer")}>
-                        <ListItemText primary="Offer" />
-                    </ListItemButton>
-                </List>
-            </Drawer>
-
+            {/* Main Content */}
             <Box
                 component="main"
                 sx={{
@@ -669,32 +653,36 @@ export default function AdminPanel() {
                     bgcolor: "#f5f6fa",
                     p: 4,
                     minHeight: "100vh",
+                    width: { md: `calc(100% - ${drawerWidth}px)` },
+                    mt: isMobile ? 8 : 0, // add top margin on mobile for AppBar
                     overflowY: "auto",
                 }}
             >
                 {activeSection === "category" && (
-                    <Box maxWidth={900} mx="auto" px={2} py={3} bgcolor="#fff" borderRadius={2} boxShadow={2}>
+                    <Box
+                        maxWidth={1200}
+                        mx="auto"
+                        px={{ xs: 1, sm: 2 }}
+                        py={{ xs: 2, sm: 3 }}
+                        bgcolor="#fff"
+                        borderRadius={2}
+                        boxShadow={2}
+                    >
                         {/* Search Bar */}
-                        <Box display="flex" alignItems="center" gap={2} mb={3}>
+                        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2} mb={3}>
                             <Autocomplete
                                 freeSolo
                                 options={categoryNames}
                                 inputValue={searchTerm}
                                 onInputChange={(event, newInputValue) => {
                                     setSearchTerm(newInputValue);
-                                    if (newInputValue.trim() === "") {
-                                        setFilteredCategories(categories);
-                                    }
+                                    if (newInputValue.trim() === "") setFilteredCategories(categories);
                                 }}
                                 onChange={(event, value) => {
                                     if (value) {
-                                        const matched = categories.filter(cat =>
-                                            cat.catname.toLowerCase() === value.toLowerCase()
-                                        );
+                                        const matched = categories.filter(cat => cat.catname.toLowerCase() === value.toLowerCase());
                                         setFilteredCategories(matched);
-                                    } else {
-                                        setFilteredCategories(categories);
-                                    }
+                                    } else setFilteredCategories(categories);
                                 }}
                                 renderInput={(params) => (
                                     <TextField
@@ -710,7 +698,7 @@ export default function AdminPanel() {
                                             ),
                                         }}
                                         sx={{
-                                            width: 240,
+                                            width: { xs: '100%', sm: 240 },
                                             '& .MuiOutlinedInput-root': {
                                                 height: 40,
                                                 fontSize: 14,
@@ -738,11 +726,7 @@ export default function AdminPanel() {
                                 onChange={(e) => setCatName(e.target.value)}
                                 margin="normal"
                                 required
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: 2
-                                    },
-                                }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                             />
 
                             <TextField
@@ -754,16 +738,11 @@ export default function AdminPanel() {
                                 multiline
                                 rows={3}
                                 required
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: 2,
-                                    },
-                                }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                             />
 
                             {/* Buttons */}
-                            <Stack direction="row" spacing={2} mt={2} flexWrap="wrap">
-                                {/* Upload Button */}
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mt={2} flexWrap="wrap">
                                 <Button
                                     variant="outlined"
                                     component="label"
@@ -771,10 +750,8 @@ export default function AdminPanel() {
                                         color: '#a0522d',
                                         borderColor: '#a0522d',
                                         borderRadius: 2,
-                                        '&:hover': {
-                                            backgroundColor: '#a0522d',
-                                            color: '#fff',
-                                        },
+                                        width: { xs: '100%', sm: 'auto' },
+                                        '&:hover': { backgroundColor: '#a0522d', color: '#fff' },
                                     }}
                                 >
                                     {catimage ? catimage.name : 'Upload Image'}
@@ -786,7 +763,6 @@ export default function AdminPanel() {
                                     />
                                 </Button>
 
-                                {/* Submit Button */}
                                 <Button
                                     type="submit"
                                     variant="contained"
@@ -794,15 +770,13 @@ export default function AdminPanel() {
                                         backgroundColor: '#a0522d',
                                         color: '#fff',
                                         borderRadius: 2,
-                                        '&:hover': {
-                                            backgroundColor: '#8b4513',
-                                        },
+                                        width: { xs: '100%', sm: 'auto' },
+                                        '&:hover': { backgroundColor: '#8b4513' },
                                     }}
                                 >
                                     {isEditing ? 'Update Category' : 'Add Category'}
                                 </Button>
 
-                                {/* Cancel Button */}
                                 {isEditing && (
                                     <Button
                                         variant="text"
@@ -814,7 +788,7 @@ export default function AdminPanel() {
                                             setCatDescription('');
                                             setCatImage(null);
                                         }}
-                                        sx={{ textTransform: 'none' }}
+                                        sx={{ textTransform: 'none', width: { xs: '100%', sm: 'auto' } }}
                                     >
                                         Cancel
                                     </Button>
@@ -828,114 +802,111 @@ export default function AdminPanel() {
                         </Typography>
 
                         {/* Cards */}
-                        <Grid container spacing={3}>
-                            {filteredCategories.map((cat) => (
-                                <Grid
-                                    item
-                                    key={cat._id}
-                                    xs={6}
-                                    sm={4}
-                                    md={3}
-                                    sx={{ display: 'flex', justifyContent: 'center' }}
-                                >
-                                    <Card
-                                        sx={{
-                                            width: '100%',
-                                            maxWidth: 272,
-                                            height: 310,
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            justifyContent: 'space-between',
-                                            boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-                                            borderRadius: 2,
-                                            transition: 'transform 0.2s ease-in-out',
-                                            '&:hover': {
-                                                transform: 'scale(1.03)',
-                                            },
-                                        }}
+                        <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                            <Grid container spacing={3}>
+                                {filteredCategories.map((cat) => (
+                                    <Grid
+                                        item
+                                        key={cat._id}
+                                        xs={12}
+                                        sm={6}
+                                        md={4}
+                                        lg={3}
+                                        sx={{ display: 'flex', justifyContent: 'center' }}
                                     >
-                                        <CardMedia
-                                            component="img"
-                                            height="150"
-                                            image={`${baseurl}/uploads/${cat.catimage}`}
-                                            alt={cat.catname}
-                                        />
-                                        <CardContent
+                                        <Card
                                             sx={{
-                                                flexGrow: 1,
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
+                                                width: '100%',
+                                                maxWidth: 272,
+                                                height: 310,
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                justifyContent: 'space-between',
+                                                boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                                                borderRadius: 2,
+                                                transition: 'transform 0.2s ease-in-out',
+                                                '&:hover': { transform: 'scale(1.03)' },
                                             }}
                                         >
-                                            <Typography variant="h6" fontWeight="bold" gutterBottom noWrap>
-                                                {cat.catname}
-                                            </Typography>
-                                            <Typography
-                                                variant="body2"
-                                                color="text.secondary"
-                                                sx={{
-                                                    height: 40,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    display: '-webkit-box',
-                                                    WebkitLineClamp: 2,
-                                                    WebkitBoxOrient: 'vertical',
-                                                }}
-                                            >
-                                                {cat.catdescription}
-                                            </Typography>
-                                        </CardContent>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pb: 2 }}>
-                                            <Button
-                                                variant="outlined"
-                                                size="small"
-                                                sx={{
-                                                    color: '#a0522d',
-                                                    borderColor: '#a0522d',
-                                                    '&:hover': {
-                                                        backgroundColor: '#a0522d',
-                                                        color: '#fff',
-                                                    },
-                                                }}
-                                                onClick={() => startEditingCategory(cat)}
-                                            >
-                                                Edit
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                color="error"
-                                                size="small"
-                                                onClick={() => handleDeleteCategory(cat._id)}
-                                            >
-                                                Delete
-                                            </Button>
-                                        </Box>
-                                    </Card>
-                                </Grid>
-                            ))}
-                        </Grid>
+                                            <CardMedia
+                                                component="img"
+                                                height="150"
+                                                image={`${baseurl}/uploads/${cat.catimage}`}
+                                                alt={cat.catname}
+                                            />
+                                            <CardContent sx={{ flexGrow: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                <Typography variant="h6" fontWeight="bold" gutterBottom noWrap>
+                                                    {cat.catname}
+                                                </Typography>
+                                                <Typography
+                                                    variant="body2"
+                                                    color="text.secondary"
+                                                    sx={{
+                                                        height: 40,
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: 2,
+                                                        WebkitBoxOrient: 'vertical',
+                                                    }}
+                                                >
+                                                    {cat.catdescription}
+                                                </Typography>
+                                            </CardContent>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pb: 2 }}>
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    sx={{
+                                                        color: '#a0522d',
+                                                        borderColor: '#a0522d',
+                                                        '&:hover': { backgroundColor: '#a0522d', color: '#fff' },
+                                                    }}
+                                                    onClick={() => startEditingCategory(cat)}
+                                                >
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    variant="outlined"
+                                                    color="error"
+                                                    size="small"
+                                                    onClick={() => handleDeleteCategory(cat._id)}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </Box>
+                                        </Card>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </Box>
                     </Box>
                 )}
 
                 {activeSection === "product" && (
-                    <Box maxWidth={900} mx="auto" px={2} py={3} bgcolor="#fff" borderRadius={2} boxShadow={2}>
-
+                    <Box
+                        maxWidth={1200}  // Allow wider space on large screens
+                        mx="auto"
+                        px={{ xs: 1, sm: 2 }}
+                        py={{ xs: 2, sm: 3 }}
+                        bgcolor="#fff"
+                        borderRadius={2}
+                        boxShadow={2}
+                    >
                         {/* Search Bar */}
-                        <Box display="flex" alignItems="center" gap={2} mb={3}>
+                        <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} alignItems="center" gap={2} mb={3}>
                             <Autocomplete
                                 freeSolo
                                 options={productNames}
                                 inputValue={searchTerm}
-                                onInputChange={(event, newInputValue) => {
-                                    setSearchTerm(newInputValue);
-                                }}
+                                onInputChange={(event, newInputValue) => setSearchTerm(newInputValue)}
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
                                         placeholder="Search..."
                                         variant="outlined"
                                         sx={{
-                                            width: 240,
+                                            width: { xs: '100%', sm: 240 },
                                             '& .MuiOutlinedInput-root': {
                                                 height: 40,
                                                 fontSize: 14,
@@ -955,6 +926,7 @@ export default function AdminPanel() {
 
                         {/* Form */}
                         <form onSubmit={handleProductSubmit}>
+                            {/* Dynamic fields */}
                             {[{
                                 label: "Product Name", value: productname, onChange: setProductName
                             }, {
@@ -980,11 +952,7 @@ export default function AdminPanel() {
                                     rows={field.rows}
                                     inputProps={field.inputProps}
                                     required
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 2,
-                                        },
-                                    }}
+                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                                 />
                             ))}
 
@@ -997,11 +965,7 @@ export default function AdminPanel() {
                                 onChange={(e) => setProductFabric(e.target.value)}
                                 margin="normal"
                                 required
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
-                                        borderRadius: 2,
-                                    },
-                                }}
+                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                             >
                                 {fabricOptions.map((option) => (
                                     <MenuItem key={option} value={option}>
@@ -1023,20 +987,15 @@ export default function AdminPanel() {
                             />
 
                             <TextField
-                                label="Valid From"
-                                type="date"
-                                value={validFrom}
-                                onChange={(e) => {
-                                    console.log("validFrom input:", e.target.value);
-                                    setValidFrom(e.target.value);
-                                }}
                                 fullWidth
+                                type="date"
+                                label="Valid From"
+                                value={validFrom}
+                                onChange={(e) => setValidFrom(e.target.value)}
                                 InputLabelProps={{ shrink: true }}
-                                inputProps={{
-                                    min: new Date().toISOString().split("T")[0],
-                                }}
+                                inputProps={{ min: new Date().toISOString().split("T")[0] }}
+                                sx={{ marginTop: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
                             />
-
 
                             <TextField
                                 fullWidth
@@ -1067,9 +1026,8 @@ export default function AdminPanel() {
                                 </Select>
                             </FormControl>
 
-                            {/* Upload Image */}
-                            <Stack direction="row" spacing={2} mt={3} flexWrap="wrap">
-                                {/* Upload Image Button */}
+                            {/* Upload & Buttons */}
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mt={3} flexWrap="wrap">
                                 <Button
                                     variant="outlined"
                                     component="label"
@@ -1077,10 +1035,8 @@ export default function AdminPanel() {
                                         color: '#a0522d',
                                         borderColor: '#a0522d',
                                         borderRadius: 2,
-                                        '&:hover': {
-                                            backgroundColor: '#a0522d',
-                                            color: '#fff',
-                                        },
+                                        width: { xs: '100%', sm: 'auto' },
+                                        '&:hover': { backgroundColor: '#a0522d', color: '#fff' },
                                     }}
                                 >
                                     {productimage ? productimage[0]?.name || "Images Selected" : "Upload Product Image"}
@@ -1093,7 +1049,6 @@ export default function AdminPanel() {
                                     />
                                 </Button>
 
-                                {/* Submit Button */}
                                 <Button
                                     type="submit"
                                     variant="contained"
@@ -1101,40 +1056,24 @@ export default function AdminPanel() {
                                         backgroundColor: '#a0522d',
                                         color: '#fff',
                                         borderRadius: 2,
-                                        '&:hover': {
-                                            backgroundColor: '#8b4513',
-                                        },
+                                        width: { xs: '100%', sm: 'auto' },
+                                        '&:hover': { backgroundColor: '#8b4513' },
                                     }}
                                 >
                                     {isEditingProduct ? "Update Product" : "Add Product"}
                                 </Button>
 
-                                {/* Cancel Button */}
                                 {isEditingProduct && (
                                     <Button
                                         variant="text"
                                         color="secondary"
-                                        onClick={() => {
-                                            setIsEditingProduct(false);
-                                            setEditProductId(null);
-                                            setProductName("");
-                                            setProductPrice("");
-                                            setProductDescription("");
-                                            setProductQuantity("");
-                                            setProductGst("");
-                                            setProductColor("");
-                                            setProductFabric("");
-                                            setOfferPercentage("");
-                                            setValidTill("");
-                                            setCatId("");
-                                            setProductImage([]);
-                                        }}
+                                        onClick={() => resetProductForm()}
+                                        sx={{ width: { xs: '100%', sm: 'auto' } }}
                                     >
                                         Cancel
                                     </Button>
                                 )}
                             </Stack>
-
                         </form>
 
                         {/* Success Message */}
@@ -1149,182 +1088,159 @@ export default function AdminPanel() {
                             All Products
                         </Typography>
 
-                        <Grid container spacing={3}>
-                            {products
-                                .filter((prod) =>
-                                    prod.productname.toLowerCase().includes(searchTerm.toLowerCase())
-                                )
-                                .map((prod) => (
-                                    <Grid
-                                        item
-                                        key={prod._id}
-                                        xs={12}
-                                        sm={6}
-                                        md={3}
-                                        sx={{ display: 'flex', justifyContent: 'center' }}
-                                    >
-                                        <Card
-                                            sx={{
-                                                width: '100%',
-                                                maxWidth: 280,
-                                                height: 550, // fixed card height
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                justifyContent: 'space-between',
-                                                boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-                                                transition: 'transform 0.2s ease-in-out',
-                                                '&:hover': {
-                                                    transform: 'scale(1.03)',
-                                                },
-                                            }}
+                        <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                            <Grid container spacing={3}>
+                                {products
+                                    .filter((prod) => prod.productname.toLowerCase().includes(searchTerm.toLowerCase()))
+                                    .map((prod) => (
+                                        <Grid
+                                            item
+                                            key={prod._id}
+                                            xs={12}
+                                            sm={6}
+                                            md={4}
+                                            lg={3}
+                                            sx={{ display: 'flex', justifyContent: 'center' }}
                                         >
-                                            <CardMedia
-                                                component="img"
-                                                height="250"
-                                                image={
-                                                    prod.productimages && prod.productimages.length > 0
-                                                        ? `${baseurl}/uploads/${prod.productimages[0]}`
-                                                        : "/default-image.jpg"
-                                                }
-                                                alt={prod.productname}
-                                            />
+                                            <Card
+                                                sx={{
+                                                    width: '100%',
+                                                    maxWidth: 280,
+                                                    height: 550,
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    justifyContent: 'space-between',
+                                                    boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                                                    transition: 'transform 0.2s ease-in-out',
+                                                    '&:hover': { transform: 'scale(1.03)' },
+                                                }}
+                                            >
+                                                <CardMedia
+                                                    component="img"
+                                                    height="250"
+                                                    image={prod.productimages?.[0] ? `${baseurl}/uploads/${prod.productimages[0]}` : "/default-image.jpg"}
+                                                    alt={prod.productname}
+                                                />
 
-                                            <CardContent sx={{ flexGrow: 1, overflow: 'hidden', textAlign: 'left' }}>
-                                                <Typography variant="h6" fontWeight="bold" gutterBottom noWrap>
-                                                    {prod.productname}
-                                                </Typography>
-
-                                                <Typography
-                                                    variant="body2"
-                                                    color="text.secondary"
-                                                    sx={{
+                                                <CardContent sx={{ flexGrow: 1, overflow: 'hidden', textAlign: 'left' }}>
+                                                    <Typography variant="h6" fontWeight="bold" gutterBottom noWrap>
+                                                        {prod.productname}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary" sx={{
                                                         height: 40,
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
                                                         display: '-webkit-box',
                                                         WebkitLineClamp: 2,
                                                         WebkitBoxOrient: 'vertical',
-                                                    }}
-                                                >
-                                                    {prod.productdescription}
-                                                </Typography>
+                                                    }}>
+                                                        {prod.productdescription}
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">
+                                                        Price: ₹<span style={{ textDecoration: "line-through" }}>{prod.productprice}</span>{" "}
+                                                        <span style={{ color: "#b78c6a", fontWeight: "bold" }}>₹{getEffectivePrice(prod, offers)}</span>
+                                                    </Typography>
+                                                    <Typography variant="body2" color="text.secondary">Qty: {prod.productquantity}</Typography>
+                                                    <Typography variant="body2" color="text.secondary">GST: {prod.productgst}%</Typography>
+                                                    <Typography variant="body2" color="text.secondary">Category: {prod.cat_id?.catname || "No category"}</Typography>
+                                                    <Typography variant="body2" color="text.secondary">Color: {prod.productcolor}</Typography>
+                                                    <Typography variant="body2" color="text.secondary">Fabric: {prod.productfabric}</Typography>
+                                                </CardContent>
 
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Price: ₹
-                                                    <span style={{ textDecoration: "line-through" }}>
-                                                        {prod.productprice}
-                                                    </span>{" "}
-                                                    <span style={{ color: "#b78c6a", fontWeight: "bold" }}>
-                                                        ₹{getEffectivePrice(prod, offers)}
-                                                    </span>
-                                                </Typography>
-
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Qty: {prod.productquantity}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    GST: {prod.productgst}%
-                                                </Typography>
-
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Category: {prod.cat_id?.catname || "No category"}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Color: {prod.productcolor}
-                                                </Typography>
-                                                <Typography variant="body2" color="text.secondary">
-                                                    Fabric: {prod.productfabric}
-                                                </Typography>
-                                            </CardContent>
-
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pb: 2 }}>
-                                                <Button
-                                                    variant="outlined"
-                                                    color="primary"
-                                                    size="small"
-                                                    onClick={() => startEditingProduct(prod)}
-                                                >
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    variant="outlined"
-                                                    color="error"
-                                                    size="small"
-                                                    onClick={() => handleDeleteProduct(prod._id)}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </Box>
-                                        </Card>
-                                    </Grid>
-                                ))}
-                        </Grid>
-
+                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', px: 2, pb: 2 }}>
+                                                    <Button variant="outlined" color="primary" size="small" onClick={() => startEditingProduct(prod)}>
+                                                        Edit
+                                                    </Button>
+                                                    <Button variant="outlined" color="error" size="small" onClick={() => handleDeleteProduct(prod._id)}>
+                                                        Delete
+                                                    </Button>
+                                                </Box>
+                                            </Card>
+                                        </Grid>
+                                    ))}
+                            </Grid>
+                        </Box>
                     </Box>
                 )}
 
                 {activeSection === "contact" && (
-                    <TableContainer component={Paper}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell><b>Name </b></TableCell>
-                                    <TableCell><b>Email</b></TableCell>
-                                    <TableCell><b>Phone</b></TableCell>
-                                    <TableCell><b>Message</b></TableCell>
-                                    <TableCell><b>Date & Time</b></TableCell>
-                                    <TableCell><b>Delete</b></TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {contacts.map((contact) => (
-                                    <TableRow key={contact._id}>
-                                        <TableCell>{contact.name}</TableCell>
-                                        <TableCell>{contact.email}</TableCell>
-                                        <TableCell>{contact.phone}</TableCell>
-                                        <TableCell style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-                                            {contact.messege}
-                                        </TableCell>
-                                        <TableCell>{new Date(contact.createdAt).toLocaleString()}</TableCell>
-                                        <TableCell>
-                                            <IconButton
-                                                onClick={() => handleDeleteContact(contact._id)}
-                                                color="error"
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <Box p={{ xs: 2, sm: 3 }}>
+                        <Typography variant="h5" gutterBottom fontWeight="bold">
+                            User Queries
+                        </Typography>
+
+                        <Box sx={{ width: "100%", overflowX: "auto" }}>
+                            <TableContainer component={Paper} sx={{ minWidth: 700 }}>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell><b>Name</b></TableCell>
+                                            <TableCell><b>Email</b></TableCell>
+                                            <TableCell><b>Phone</b></TableCell>
+                                            <TableCell><b>Message</b></TableCell>
+                                            <TableCell><b>Date & Time</b></TableCell>
+                                            <TableCell><b>Delete</b></TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {contacts.map((contact) => (
+                                            <TableRow key={contact._id}>
+                                                <TableCell>{contact.name}</TableCell>
+                                                <TableCell>{contact.email}</TableCell>
+                                                <TableCell>{contact.phone}</TableCell>
+                                                <TableCell sx={{ whiteSpace: "normal", wordBreak: "break-word", maxWidth: 300 }}>
+                                                    {contact.messege}
+                                                </TableCell>
+                                                <TableCell>{new Date(contact.createdAt).toLocaleString()}</TableCell>
+                                                <TableCell>
+                                                    <IconButton
+                                                        onClick={() => handleDeleteContact(contact._id)}
+                                                        color="error"
+                                                    >
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Box>
+                    </Box>
                 )}
 
                 {activeSection === "users" && (
-                    <TableContainer component={Paper}>
-                        <Table>
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell><b>Name</b></TableCell>
-                                    <TableCell><b>Email</b></TableCell>
-                                    <TableCell><b>Phone</b></TableCell>
-                                    <TableCell><b>Created At</b></TableCell>
-                                    {/* //<TableCell><b>Delete</b></TableCell> // */}
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {users.map((user) => (
-                                    <TableRow key={user._id}>
-                                        <TableCell>{user.name}</TableCell>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>{user.phone}</TableCell>
-                                        <TableCell>{new Date(user.createdAt).toLocaleString()}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                    <Box p={{ xs: 2, sm: 3 }}>
+                        <Typography variant="h5" gutterBottom fontWeight="bold">
+                            User Details
+                        </Typography>
+
+                        <Box sx={{ width: "100%", overflowX: "auto" }}>
+                            <TableContainer component={Paper} sx={{ minWidth: 600 }}>
+                                <Table>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell><b>Name</b></TableCell>
+                                            <TableCell><b>Email</b></TableCell>
+                                            <TableCell><b>Phone</b></TableCell>
+                                            <TableCell><b>Created At</b></TableCell>
+                                            {/* <TableCell><b>Delete</b></TableCell> */}
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {users.map((user) => (
+                                            <TableRow key={user._id}>
+                                                <TableCell>{user.name}</TableCell>
+                                                <TableCell>{user.email}</TableCell>
+                                                <TableCell>{user.phone}</TableCell>
+                                                <TableCell>{new Date(user.createdAt).toLocaleString()}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </Box>
+                    </Box>
                 )}
 
                 {activeSection === "orders" && (
@@ -1349,6 +1265,7 @@ export default function AdminPanel() {
                                 value={fromDate}
                                 onChange={(e) => setFromDate(e.target.value)}
                                 size="small"
+                                fullWidth
                             />
                             <TextField
                                 type="date"
@@ -1357,9 +1274,10 @@ export default function AdminPanel() {
                                 value={toDate}
                                 onChange={(e) => setToDate(e.target.value)}
                                 size="small"
+                                fullWidth
                             />
 
-                            <FormControl size="small" sx={{ minWidth: 160 }}>
+                            <FormControl size="small" fullWidth sx={{ minWidth: 160 }}>
                                 <InputLabel>Payment</InputLabel>
                                 <Select
                                     value={paymentFilter}
@@ -1372,7 +1290,7 @@ export default function AdminPanel() {
                                 </Select>
                             </FormControl>
 
-                            <FormControl size="small" sx={{ minWidth: 160 }}>
+                            <FormControl size="small" fullWidth sx={{ minWidth: 160 }}>
                                 <InputLabel>Sort By</InputLabel>
                                 <Select
                                     value={sortOption}
@@ -1394,7 +1312,7 @@ export default function AdminPanel() {
                                     setPaymentFilter("all");
                                     setSortOption("latest");
                                 }}
-                                sx={{ height: 40 }}
+                                sx={{ height: 40, whiteSpace: "nowrap" }}
                             >
                                 Clear Filters
                             </Button>
@@ -1405,97 +1323,103 @@ export default function AdminPanel() {
                             Total Sales: {filteredOrders.length} | Total Revenue: ₹{totalFilteredRevenue.toFixed(2)}
                         </Typography>
 
-                        {/* Orders Table */}
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell><strong>User</strong></TableCell>
-                                    <TableCell><strong>Phone</strong></TableCell>
-                                    <TableCell><strong>Payment</strong></TableCell>
-                                    <TableCell><strong>Payment ID</strong></TableCell>
-                                    <TableCell><strong>Order ID</strong></TableCell>
-                                    <TableCell><strong>Total</strong></TableCell>
-                                    <TableCell><strong>Status</strong></TableCell>
-                                    <TableCell><strong>Items</strong></TableCell>
-                                    <TableCell><strong>Date & Time</strong></TableCell>
-                                </TableRow>
-                            </TableHead>
-
-                            <TableBody>
-                                {filteredOrders.map((order) => (
-                                    <TableRow
-                                        key={order._id}
-                                        sx={{
-                                            backgroundColor: order.status === "cancelled" ? "#ffdddd" : "inherit",
-                                        }}
-                                    >
-                                        <TableCell>{order.username}</TableCell>
-                                        <TableCell>{order.userphone}</TableCell>
-                                        <TableCell>{order.paymentMode}</TableCell>
-                                        <TableCell>{order.paymentId || "N/A"}</TableCell>
-                                        <TableCell>{order._id}</TableCell>
-                                        <TableCell>₹{order.total}</TableCell>
-                                        <TableCell>
-                                            <Typography
-                                                sx={{
-                                                    color: order.status === "cancelled" ? "red" : (order.status === "delivered" ? "green" : "orange"),
-                                                    fontWeight: "bold",
-                                                }}
-                                            >
-                                                {order.status.toUpperCase()}
-                                            </Typography>
-
-                                            {order.status !== "delivered" && order.status !== "cancelled" && (
-                                                <Button
-                                                    variant="contained"
-                                                    color="success"
-                                                    size="small"
-                                                    sx={{ mt: 1 }}
-                                                    onClick={() => handleMarkAsDelivered(order._id)}
-                                                >
-                                                    Mark as delivered
-                                                </Button>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            {order.items.map((item, i) => (
-                                                <Box key={i} mb={1}>
-                                                    <Typography variant="body2"><strong>{item.productname}</strong></Typography>
-                                                    <Typography variant="body2">Qty: {item.productquantity}</Typography>
-                                                    <Typography variant="body2">Price: ₹{item.productprice} | GST: {item.productgst}%</Typography>
-                                                    <Typography variant="body2">
-                                                        Offer:{" "}
-                                                        {item.offer
-                                                            ? item.offer.offerType === "percentage"
-                                                                ? `${item.offer.offerValue}%`
-                                                                : `₹${item.offer.offerValue}`
-                                                            : "N/A"}
-                                                    </Typography>
-                                                    <Typography variant="body2">
-                                                        Valid Till:{" "}
-                                                        {item.offer?.validTill
-                                                            ? new Date(item.offer.validTill).toLocaleDateString()
-                                                            : "N/A"}
-                                                    </Typography>
-                                                </Box>
-                                            ))}
-                                        </TableCell>
-                                        <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
+                        {/* Responsive Orders Table */}
+                        <Box sx={{ width: "100%", overflowX: "auto" }}>
+                            <Table size="small" sx={{ minWidth: 900 }}>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell><strong>User</strong></TableCell>
+                                        <TableCell><strong>Phone</strong></TableCell>
+                                        <TableCell><strong>Payment</strong></TableCell>
+                                        <TableCell><strong>Payment ID</strong></TableCell>
+                                        <TableCell><strong>Order ID</strong></TableCell>
+                                        <TableCell><strong>Total</strong></TableCell>
+                                        <TableCell><strong>Status</strong></TableCell>
+                                        <TableCell><strong>Items</strong></TableCell>
+                                        <TableCell><strong>Date & Time</strong></TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHead>
+
+                                <TableBody>
+                                    {filteredOrders.map((order) => (
+                                        <TableRow
+                                            key={order._id}
+                                            sx={{
+                                                backgroundColor: order.status === "cancelled" ? "#ffdddd" : "inherit",
+                                            }}
+                                        >
+                                            <TableCell>{order.username}</TableCell>
+                                            <TableCell>{order.userphone}</TableCell>
+                                            <TableCell>{order.paymentMode}</TableCell>
+                                            <TableCell>{order.paymentId || "N/A"}</TableCell>
+                                            <TableCell>{order._id}</TableCell>
+                                            <TableCell>₹{order.total}</TableCell>
+                                            <TableCell>
+                                                <Typography
+                                                    sx={{
+                                                        color: order.status === "cancelled" ? "red" : (order.status === "delivered" ? "green" : "orange"),
+                                                        fontWeight: "bold",
+                                                    }}
+                                                >
+                                                    {order.status.toUpperCase()}
+                                                </Typography>
+
+                                                {order.status !== "delivered" && order.status !== "cancelled" && (
+                                                    <Button
+                                                        variant="contained"
+                                                        color="success"
+                                                        size="small"
+                                                        sx={{ mt: 1 }}
+                                                        onClick={() => handleMarkAsDelivered(order._id)}
+                                                    >
+                                                        Mark as delivered
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {order.items.map((item, i) => (
+                                                    <Box key={i} mb={1}>
+                                                        <Typography variant="body2"><strong>{item.productname}</strong></Typography>
+                                                        <Typography variant="body2">Qty: {item.productquantity}</Typography>
+                                                        <Typography variant="body2">Price: ₹{item.productprice} | GST: {item.productgst}%</Typography>
+                                                        <Typography variant="body2">
+                                                            Offer:{" "}
+                                                            {item.offer
+                                                                ? item.offer.offerType === "percentage"
+                                                                    ? `${item.offer.offerValue}%`
+                                                                    : `₹${item.offer.offerValue}`
+                                                                : "N/A"}
+                                                        </Typography>
+                                                        <Typography variant="body2">
+                                                            Valid Till:{" "}
+                                                            {item.offer?.validTill
+                                                                ? new Date(item.offer.validTill).toLocaleDateString()
+                                                                : "N/A"}
+                                                        </Typography>
+                                                    </Box>
+                                                ))}
+                                            </TableCell>
+                                            <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Box>
                     </Box>
                 )}
 
                 {activeSection === "offer" && (
-                    <Box p={3}>
-                        <Typography variant="h5" gutterBottom>
+                    <Box p={{ xs: 2, sm: 3 }}>
+                        <Typography
+                            variant="h5"
+                            gutterBottom
+                            sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
+                        >
                             Create Offer
                         </Typography>
 
                         {/* Offer Target Selection */}
-                        <Box mt={2}>
+                        <Box mt={{ xs: 2, sm: 3 }}>
                             <FormControl component="fieldset" fullWidth>
                                 <FormLabel component="legend">Apply Offer To</FormLabel>
                                 <RadioGroup
@@ -1515,7 +1439,7 @@ export default function AdminPanel() {
 
                         {/* Category Selection */}
                         {offerTargetType === "category" && (
-                            <Box mt={2}>
+                            <Box mt={{ xs: 2, sm: 3 }}>
                                 <Typography variant="subtitle1" gutterBottom>
                                     Select Categories
                                 </Typography>
@@ -1557,7 +1481,7 @@ export default function AdminPanel() {
                                                     }
 
                                                     if (validCategoryIds.length === 0) {
-                                                        setDialogMessage(" All categories or their products already have active offers.");
+                                                        setDialogMessage("All categories or their products already have active offers.");
                                                         setDialogOpen(true);
                                                         return;
                                                     }
@@ -1569,7 +1493,6 @@ export default function AdminPanel() {
                                                     setSelectedTargetIds([]);
                                                 }
                                             }}
-
                                         />
                                     }
                                     label="Select All Categories"
@@ -1583,6 +1506,7 @@ export default function AdminPanel() {
                                     borderColor="#ddd"
                                     p={2}
                                     borderRadius={2}
+                                    width="100%"
                                 >
                                     <FormGroup>
                                         {categories.map((cat) => (
@@ -1601,19 +1525,18 @@ export default function AdminPanel() {
                                 </Box>
                             </Box>
                         )}
+
                         {/* Product Selection */}
                         {offerTargetType === "product" && (
-                            <Box mt={2}>
+                            <Box mt={{ xs: 2, sm: 3 }}>
                                 <Typography variant="subtitle1" gutterBottom>
                                     Select Products
                                 </Typography>
 
-                                {/* Select All Products Checkbox */}
                                 <FormControlLabel
                                     control={
                                         <Checkbox
                                             checked={selectAllProducts}
-
                                             onChange={async (e) => {
                                                 const isChecked = e.target.checked;
                                                 const today = new Date();
@@ -1644,7 +1567,7 @@ export default function AdminPanel() {
                                                     }
 
                                                     if (validProductIds.length === 0) {
-                                                        setDialogMessage(" All products or their categories already have active offers.");
+                                                        setDialogMessage("All products or their categories already have active offers.");
                                                         setDialogOpen(true);
                                                         return;
                                                     }
@@ -1656,17 +1579,23 @@ export default function AdminPanel() {
                                                     setSelectedTargetIds([]);
                                                 }
                                             }}
-
                                         />
                                     }
                                     label="Select All Products"
                                 />
 
-                                {/* Product List */}
-                                <Box mt={2} maxHeight="200px" overflow="auto" border={1} borderColor="#ddd" p={2} borderRadius={2}>
+                                <Box
+                                    mt={2}
+                                    maxHeight="200px"
+                                    overflow="auto"
+                                    border={1}
+                                    borderColor="#ddd"
+                                    p={2}
+                                    borderRadius={2}
+                                    width="100%"
+                                >
                                     <FormGroup>
                                         {products.map((prod) => (
-
                                             <FormControlLabel
                                                 key={prod._id}
                                                 control={
@@ -1677,16 +1606,14 @@ export default function AdminPanel() {
                                                 }
                                                 label={prod.productname}
                                             />
-
                                         ))}
                                     </FormGroup>
                                 </Box>
                             </Box>
                         )}
 
-
                         {/* Offer Details */}
-                        <Grid container spacing={2} mt={3}>
+                        <Grid container spacing={2} mt={{ xs: 2, sm: 3 }}>
                             <Grid item xs={12} sm={4}>
                                 <FormControl fullWidth>
                                     <InputLabel>Offer Type</InputLabel>
@@ -1712,7 +1639,6 @@ export default function AdminPanel() {
                             </Grid>
 
                             <Grid item xs={12} sm={4}>
-
                                 <TextField
                                     label="Valid From"
                                     type="date"
@@ -1722,27 +1648,25 @@ export default function AdminPanel() {
                                     InputLabelProps={{ shrink: true }}
                                     sx={{ mb: 2 }}
                                 />
-
-
-
                                 <TextField
                                     label="Valid Till"
                                     type="date"
                                     value={offerValidTill}
                                     onChange={(e) => setOfferValidTill(e.target.value)}
+                                    fullWidth
                                     InputLabelProps={{ shrink: true }}
                                     inputProps={{
                                         min: new Date().toISOString().split("T")[0],
                                     }}
-                                    fullWidth
                                 />
                             </Grid>
                         </Grid>
 
                         {/* Submit Offer */}
-                        <Box mt={3}>
+                        <Box mt={{ xs: 3, sm: 4 }}>
                             <Button
                                 variant="contained"
+                                fullWidth
                                 onClick={async () => {
                                     try {
                                         const payload = {
@@ -1750,15 +1674,14 @@ export default function AdminPanel() {
                                             offerType,
                                             offerValue: Number(offerValue),
                                             validFrom: new Date(validFrom).toISOString(),
-                                            validTill: new Date(offerValidTill).toISOString(),  // ✅ FIXED HERE
+                                            validTill: new Date(offerValidTill).toISOString(),
                                             targetIds: selectedTargetIds,
                                         };
 
                                         const response = await axios.post(`${baseurl}/api/create`, payload);
                                         fetchOffers();
-                                        alert(" Offer created successfully");
+                                        alert("Offer created successfully");
 
-                                        // Reset form
                                         setSelectedTargetIds([]);
                                         setSelectAllProducts(false);
                                         setSelectAllCategories(false);
@@ -1776,11 +1699,10 @@ export default function AdminPanel() {
                             >
                                 Create Offer
                             </Button>
-
                         </Box>
 
                         {/* Dialog */}
-                        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+                        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="xs" fullWidth>
                             <DialogTitle>Offer Already Running</DialogTitle>
                             <DialogContent>
                                 <DialogContentText>{dialogMessage}</DialogContentText>
@@ -1793,70 +1715,72 @@ export default function AdminPanel() {
                         </Dialog>
 
                         {/* All Offers Table */}
-                        <Box mt={5}>
+                        <Box mt={{ xs: 4, sm: 5 }}>
                             <Typography variant="h6" gutterBottom>
                                 All Offers
                             </Typography>
 
-                            <TableContainer component={Paper}>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>Target Type</TableCell>
-                                            <TableCell>Target Names</TableCell>
-                                            <TableCell>Offer Type</TableCell>
-                                            <TableCell>Offer Value</TableCell>
-                                            <TableCell>Valid From</TableCell>
-                                            <TableCell>Valid Till</TableCell>
-                                            <TableCell>Actions</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {offers.map((offer) => (
-                                            <TableRow key={offer._id}>
-                                                <TableCell>{offer.targetType}</TableCell>
-                                                <TableCell>
-                                                    {(offer.targetNames || []).length > 0
-                                                        ? offer.targetNames.join(", ")
-                                                        : "N/A"}
-                                                </TableCell>
-                                                <TableCell>{offer.offerType}</TableCell>
-                                                <TableCell>
-                                                    {offer.offerType === "percentage"
-                                                        ? `${offer.offerValue}%`
-                                                        : `₹${offer.offerValue}`}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {new Date(offer.validFrom).toLocaleDateString("en-GB")}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {new Date(offer.validTill).toLocaleDateString()}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Button
-                                                        variant="outlined"
-                                                        color="error"
-                                                        size="small"
-                                                        onClick={async () => {
-                                                            if (window.confirm("Are you sure you want to delete this offer?")) {
-                                                                try {
-                                                                    await axios.delete(`${baseurl}/api/delete/${offer._id}`);
-                                                                    fetchOffers();
-                                                                } catch (err) {
-                                                                    console.error("Delete failed:", err);
-                                                                    alert("Failed to delete offer");
-                                                                }
-                                                            }
-                                                        }}
-                                                    >
-                                                        Delete
-                                                    </Button>
-                                                </TableCell>
+                            <Box sx={{ width: "100%", overflowX: "auto" }}>
+                                <TableContainer component={Paper}>
+                                    <Table sx={{ minWidth: 800 }}>
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Target Type</TableCell>
+                                                <TableCell>Target Names</TableCell>
+                                                <TableCell>Offer Type</TableCell>
+                                                <TableCell>Offer Value</TableCell>
+                                                <TableCell>Valid From</TableCell>
+                                                <TableCell>Valid Till</TableCell>
+                                                <TableCell>Actions</TableCell>
                                             </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
+                                        </TableHead>
+                                        <TableBody>
+                                            {offers.map((offer) => (
+                                                <TableRow key={offer._id}>
+                                                    <TableCell>{offer.targetType}</TableCell>
+                                                    <TableCell>
+                                                        {(offer.targetNames || []).length > 0
+                                                            ? offer.targetNames.join(", ")
+                                                            : "N/A"}
+                                                    </TableCell>
+                                                    <TableCell>{offer.offerType}</TableCell>
+                                                    <TableCell>
+                                                        {offer.offerType === "percentage"
+                                                            ? `${offer.offerValue}%`
+                                                            : `₹${offer.offerValue}`}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {new Date(offer.validFrom).toLocaleDateString("en-GB")}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {new Date(offer.validTill).toLocaleDateString()}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button
+                                                            variant="outlined"
+                                                            color="error"
+                                                            size="small"
+                                                            onClick={async () => {
+                                                                if (window.confirm("Are you sure you want to delete this offer?")) {
+                                                                    try {
+                                                                        await axios.delete(`${baseurl}/api/delete/${offer._id}`);
+                                                                        fetchOffers();
+                                                                    } catch (err) {
+                                                                        console.error("Delete failed:", err);
+                                                                        alert("Failed to delete offer");
+                                                                    }
+                                                                }
+                                                            }}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </Box>
                         </Box>
                     </Box>
                 )}
