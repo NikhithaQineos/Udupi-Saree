@@ -811,14 +811,14 @@ export default function AdminPanel() {
                                         xs={12}
                                         sm={6}
                                         md={4}
-                                        lg={3}
+                                        lg={4}
                                         sx={{ display: 'flex', justifyContent: 'center' }}
                                     >
                                         <Card
                                             sx={{
                                                 width: '100%',
-                                                maxWidth: 272,
-                                                height: 310,
+                                                maxWidth: 232,
+                                                height: 300,
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 justifyContent: 'space-between',
@@ -974,41 +974,6 @@ export default function AdminPanel() {
                                 ))}
                             </TextField>
 
-                            {/* Offer */}
-                            <TextField
-                                fullWidth
-                                type="number"
-                                label="Offer Percentage (%)"
-                                value={offerpercentage}
-                                onChange={(e) => setOfferPercentage(e.target.value)}
-                                margin="normal"
-                                inputProps={{ min: 0, max: 100 }}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                type="date"
-                                label="Valid From"
-                                value={validFrom}
-                                onChange={(e) => setValidFrom(e.target.value)}
-                                InputLabelProps={{ shrink: true }}
-                                inputProps={{ min: new Date().toISOString().split("T")[0] }}
-                                sx={{ marginTop: 2, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                            />
-
-                            <TextField
-                                fullWidth
-                                type="date"
-                                label="Valid Till"
-                                value={validTill}
-                                onChange={(e) => setValidTill(e.target.value)}
-                                margin="normal"
-                                InputLabelProps={{ shrink: true }}
-                                inputProps={{ min: new Date().toISOString().split("T")[0] }}
-                                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
-                            />
-
                             {/* Category Select */}
                             <FormControl fullWidth margin="normal" required>
                                 <InputLabel>Category</InputLabel>
@@ -1099,13 +1064,13 @@ export default function AdminPanel() {
                                             xs={12}
                                             sm={6}
                                             md={4}
-                                            lg={3}
+                                            lg={4}
                                             sx={{ display: 'flex', justifyContent: 'center' }}
                                         >
                                             <Card
                                                 sx={{
                                                     width: '100%',
-                                                    maxWidth: 280,
+                                                    maxWidth: 232,
                                                     height: 550,
                                                     display: 'flex',
                                                     flexDirection: 'column',
@@ -1244,166 +1209,204 @@ export default function AdminPanel() {
                 )}
 
                 {activeSection === "orders" && (
-                    <Box sx={{ p: 3 }}>
-                        <Typography variant="h5" gutterBottom fontWeight="bold">
+                    <Box sx={{ p: { xs: 2, sm: 3 } }}>
+                        <Typography
+                            variant="h5"
+                            gutterBottom
+                            fontWeight="bold"
+                            sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}
+                        >
                             All Orders
                         </Typography>
 
                         {/* Filters Row */}
-                        <Stack
-                            direction={{ xs: "column", sm: "row" }}
-                            spacing={2}
-                            alignItems="flex-start"
-                            justifyContent="space-between"
-                            flexWrap="wrap"
-                            sx={{ mb: 3 }}
-                        >
-                            <TextField
-                                type="date"
-                                label="From Date"
-                                InputLabelProps={{ shrink: true }}
-                                value={fromDate}
-                                onChange={(e) => setFromDate(e.target.value)}
-                                size="small"
-                                fullWidth
-                            />
-                            <TextField
-                                type="date"
-                                label="To Date"
-                                InputLabelProps={{ shrink: true }}
-                                value={toDate}
-                                onChange={(e) => setToDate(e.target.value)}
-                                size="small"
-                                fullWidth
-                            />
-
-                            <FormControl size="small" fullWidth sx={{ minWidth: 160 }}>
-                                <InputLabel>Payment</InputLabel>
-                                <Select
-                                    value={paymentFilter}
-                                    label="Payment"
-                                    onChange={(e) => setPaymentFilter(e.target.value)}
-                                >
-                                    <MenuItem value="all">All</MenuItem>
-                                    <MenuItem value="COD">COD</MenuItem>
-                                    <MenuItem value="Razorpay">Razorpay</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <FormControl size="small" fullWidth sx={{ minWidth: 160 }}>
-                                <InputLabel>Sort By</InputLabel>
-                                <Select
-                                    value={sortOption}
-                                    label="Sort By"
-                                    onChange={(e) => setSortOption(e.target.value)}
-                                >
-                                    <MenuItem value="latest">Latest</MenuItem>
-                                    <MenuItem value="oldest">Oldest</MenuItem>
-                                    <MenuItem value="amountHigh">Amount High → Low</MenuItem>
-                                    <MenuItem value="amountLow">Amount Low → High</MenuItem>
-                                </Select>
-                            </FormControl>
-
-                            <Button
-                                variant="outlined"
-                                onClick={() => {
-                                    setFromDate("");
-                                    setToDate("");
-                                    setPaymentFilter("all");
-                                    setSortOption("latest");
-                                }}
-                                sx={{ height: 40, whiteSpace: "nowrap" }}
+                        <Box sx={{ maxWidth: 1200, mx: "auto", mb: 3 }}>
+                            <Grid
+                                container
+                                spacing={2}
+                                alignItems="center"
+                                justifyContent="flex-start"
                             >
-                                Clear Filters
-                            </Button>
-                        </Stack>
+                                <Grid item xs={12} sm={3}>
+                                    <TextField
+                                        type="date"
+                                        label="From Date"
+                                        InputLabelProps={{ shrink: true }}
+                                        value={fromDate}
+                                        onChange={(e) => setFromDate(e.target.value)}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={3}>
+                                    <TextField
+                                        type="date"
+                                        label="To Date"
+                                        InputLabelProps={{ shrink: true }}
+                                        value={toDate}
+                                        onChange={(e) => setToDate(e.target.value)}
+                                        size="small"
+                                        fullWidth
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={2}>
+                                    <FormControl size="small" fullWidth>
+                                        <InputLabel>Payment</InputLabel>
+                                        <Select
+                                            value={paymentFilter}
+                                            label="Payment"
+                                            onChange={(e) => setPaymentFilter(e.target.value)}
+                                        >
+                                            <MenuItem value="all">All</MenuItem>
+                                            <MenuItem value="COD">COD</MenuItem>
+                                            <MenuItem value="Razorpay">Razorpay</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={12} sm={2}>
+                                    <FormControl size="small" fullWidth>
+                                        <InputLabel>Sort By</InputLabel>
+                                        <Select
+                                            value={sortOption}
+                                            label="Sort By"
+                                            onChange={(e) => setSortOption(e.target.value)}
+                                        >
+                                            <MenuItem value="latest">Latest</MenuItem>
+                                            <MenuItem value="oldest">Oldest</MenuItem>
+                                            <MenuItem value="amountHigh">Amount High → Low</MenuItem>
+                                            <MenuItem value="amountLow">Amount Low → High</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Grid>
+                                <Grid item xs={12} sm={2}>
+                                    <Button
+                                        variant="outlined"
+                                        fullWidth
+                                        sx={{ height: 40 }}
+                                        onClick={() => {
+                                            setFromDate("");
+                                            setToDate("");
+                                            setPaymentFilter("all");
+                                            setSortOption("latest");
+                                        }}
+                                    >
+                                        Clear Filters
+                                    </Button>
+                                </Grid>
+                            </Grid>
+                        </Box>
 
                         {/* Summary */}
-                        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 'bold' }}>
+                        <Typography
+                            variant="subtitle1"
+                            sx={{ mb: 2, fontWeight: "bold", fontSize: { xs: "0.9rem", sm: "1rem" } }}
+                        >
                             Total Sales: {filteredOrders.length} | Total Revenue: ₹{totalFilteredRevenue.toFixed(2)}
                         </Typography>
 
-                        {/* Responsive Orders Table */}
+                        {/* Orders Table */}
                         <Box sx={{ width: "100%", overflowX: "auto" }}>
-                            <Table size="small" sx={{ minWidth: 900 }}>
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell><strong>User</strong></TableCell>
-                                        <TableCell><strong>Phone</strong></TableCell>
-                                        <TableCell><strong>Payment</strong></TableCell>
-                                        <TableCell><strong>Payment ID</strong></TableCell>
-                                        <TableCell><strong>Order ID</strong></TableCell>
-                                        <TableCell><strong>Total</strong></TableCell>
-                                        <TableCell><strong>Status</strong></TableCell>
-                                        <TableCell><strong>Items</strong></TableCell>
-                                        <TableCell><strong>Date & Time</strong></TableCell>
-                                    </TableRow>
-                                </TableHead>
-
-                                <TableBody>
-                                    {filteredOrders.map((order) => (
-                                        <TableRow
-                                            key={order._id}
-                                            sx={{
-                                                backgroundColor: order.status === "cancelled" ? "#ffdddd" : "inherit",
-                                            }}
-                                        >
-                                            <TableCell>{order.username}</TableCell>
-                                            <TableCell>{order.userphone}</TableCell>
-                                            <TableCell>{order.paymentMode}</TableCell>
-                                            <TableCell>{order.paymentId || "N/A"}</TableCell>
-                                            <TableCell>{order._id}</TableCell>
-                                            <TableCell>₹{order.total}</TableCell>
-                                            <TableCell>
-                                                <Typography
-                                                    sx={{
-                                                        color: order.status === "cancelled" ? "red" : (order.status === "delivered" ? "green" : "orange"),
-                                                        fontWeight: "bold",
-                                                    }}
-                                                >
-                                                    {order.status.toUpperCase()}
-                                                </Typography>
-
-                                                {order.status !== "delivered" && order.status !== "cancelled" && (
-                                                    <Button
-                                                        variant="contained"
-                                                        color="success"
-                                                        size="small"
-                                                        sx={{ mt: 1 }}
-                                                        onClick={() => handleMarkAsDelivered(order._id)}
-                                                    >
-                                                        Mark as delivered
-                                                    </Button>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                {order.items.map((item, i) => (
-                                                    <Box key={i} mb={1}>
-                                                        <Typography variant="body2"><strong>{item.productname}</strong></Typography>
-                                                        <Typography variant="body2">Qty: {item.productquantity}</Typography>
-                                                        <Typography variant="body2">Price: ₹{item.productprice} | GST: {item.productgst}%</Typography>
-                                                        <Typography variant="body2">
-                                                            Offer:{" "}
-                                                            {item.offer
-                                                                ? item.offer.offerType === "percentage"
-                                                                    ? `${item.offer.offerValue}%`
-                                                                    : `₹${item.offer.offerValue}`
-                                                                : "N/A"}
-                                                        </Typography>
-                                                        <Typography variant="body2">
-                                                            Valid Till:{" "}
-                                                            {item.offer?.validTill
-                                                                ? new Date(item.offer.validTill).toLocaleDateString()
-                                                                : "N/A"}
-                                                        </Typography>
-                                                    </Box>
-                                                ))}
-                                            </TableCell>
-                                            <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
+                            <TableContainer>
+                                <Table size="small" sx={{ minWidth: 900 }}>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell><strong>User</strong></TableCell>
+                                            <TableCell><strong>Phone</strong></TableCell>
+                                            <TableCell><strong>Payment</strong></TableCell>
+                                            <TableCell><strong>Payment ID</strong></TableCell>
+                                            <TableCell><strong>Order ID</strong></TableCell>
+                                            <TableCell><strong>Total</strong></TableCell>
+                                            <TableCell><strong>Status</strong></TableCell>
+                                            <TableCell><strong>Items</strong></TableCell>
+                                            <TableCell><strong>Date & Time</strong></TableCell>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHead>
+
+                                    <TableBody>
+                                        {filteredOrders.map((order) => (
+                                            <TableRow
+                                                key={order._id}
+                                                sx={{
+                                                    backgroundColor: order.status === "cancelled" ? "#ffdddd" : "inherit",
+                                                }}
+                                            >
+                                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                                    {order.username}
+                                                </TableCell>
+                                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                                    {order.userphone}
+                                                </TableCell>
+                                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                                    {order.paymentMode}
+                                                </TableCell>
+                                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                                    {order.paymentId || "N/A"}
+                                                </TableCell>
+                                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                                    {order._id}
+                                                </TableCell>
+                                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                                    ₹{order.total}
+                                                </TableCell>
+                                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                                    <Typography
+                                                        sx={{
+                                                            color:
+                                                                order.status === "cancelled"
+                                                                    ? "red"
+                                                                    : order.status === "delivered"
+                                                                        ? "green"
+                                                                        : "orange",
+                                                            fontWeight: "bold",
+                                                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                                                        }}
+                                                    >
+                                                        {order.status.toUpperCase()}
+                                                    </Typography>
+
+                                                    {order.status !== "delivered" && order.status !== "cancelled" && (
+                                                        <Button
+                                                            variant="contained"
+                                                            color="success"
+                                                            size="small"
+                                                            sx={{ mt: 1 }}
+                                                            onClick={() => handleMarkAsDelivered(order._id)}
+                                                        >
+                                                            Mark as delivered
+                                                        </Button>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                                    {order.items.map((item, i) => (
+                                                        <Box key={i} mb={1}>
+                                                            <Typography variant="body2"><strong>{item.productname}</strong></Typography>
+                                                            <Typography variant="body2">Qty: {item.productquantity}</Typography>
+                                                            <Typography variant="body2">Price: ₹{item.productprice} | GST: {item.productgst}%</Typography>
+                                                            <Typography variant="body2">
+                                                                Offer:{" "}
+                                                                {item.offer
+                                                                    ? item.offer.offerType === "percentage"
+                                                                        ? `${item.offer.offerValue}%`
+                                                                        : `₹${item.offer.offerValue}`
+                                                                    : "N/A"}
+                                                            </Typography>
+                                                            <Typography variant="body2">
+                                                                Valid Till:{" "}
+                                                                {item.offer?.validTill
+                                                                    ? new Date(item.offer.validTill).toLocaleDateString()
+                                                                    : "N/A"}
+                                                            </Typography>
+                                                        </Box>
+                                                    ))}
+                                                </TableCell>
+                                                <TableCell sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
+                                                    {new Date(order.createdAt).toLocaleString()}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
                         </Box>
                     </Box>
                 )}
@@ -1639,15 +1642,20 @@ export default function AdminPanel() {
                             </Grid>
 
                             <Grid item xs={12} sm={4}>
+
                                 <TextField
                                     label="Valid From"
                                     type="date"
                                     value={validFrom}
                                     onChange={(e) => setValidFrom(e.target.value)}
-                                    fullWidth
                                     InputLabelProps={{ shrink: true }}
-                                    sx={{ mb: 2 }}
+                                    inputProps={{
+                                        min: new Date().toISOString().split("T")[0],
+                                    }}
+                                    fullWidth
                                 />
+                            </Grid>
+                            <Grid item xs={12} sm={4}>
                                 <TextField
                                     label="Valid Till"
                                     type="date"

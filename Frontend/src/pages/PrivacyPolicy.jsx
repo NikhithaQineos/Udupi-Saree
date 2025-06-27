@@ -21,10 +21,6 @@ const PrivacyPolicy = () => {
           • <strong>Order Details:</strong> Information about the products you purchase,
           your payment methods, and order history.
         </Typography>
-        <Typography paragraph sx={{ pl: 2 }}>
-          • <strong>Device Info:</strong> Technical information such as your IP address,
-          browser type, device identifiers, and cookies.
-        </Typography>
 
         <Typography paragraph>
           <strong>2. How We Use Your Information:</strong> Your information helps us:
